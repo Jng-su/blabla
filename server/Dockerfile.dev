@@ -1,0 +1,8 @@
+FROM node:21-alpine
+WORKDIR /usr/src/app
+RUN apk add --no-cache curl
+COPY package.json package-lock.json ./
+RUN npm install
+COPY . .
+EXPOSE 8000
+CMD ["npm", "run", "start:dev"]

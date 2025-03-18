@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+# Dist folder
+dist/
+build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# IDE settings
+.idea/
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.development
+.env.production
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+
+# Test files and folders
+test/

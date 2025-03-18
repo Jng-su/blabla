@@ -1,0 +1,63 @@
+services:
+  blabla-server:
+    container_name: blabla-server
+    image: blabla-server
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    env_file: ./server/.env.production
+    ports:
+      - "8000:8000"
+    networks:
+      - blabla-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    depends_on:
+      blabla-database:
+        condition: service_healthy
+      blabla-redis:
+        condition: service_started
+
+  blabla-database:
+    image: postgres
+    container_name: blabla-database
+    env_file:
+      - ./server/.env.production
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blabla-network
+
+  blabla-redis:
+    image: redis:alpine
+    container_name: blabla-redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blabla-network
+
+networks:
+  blabla-network:
+    name: blabla-network
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+  redis_data:
+    driver: local

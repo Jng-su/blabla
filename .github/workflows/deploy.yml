@@ -1,0 +1,170 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+  clean-ec2-system:
+    runs-on: ubuntu-latest
+    needs: run-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Clean EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "Docker 및 시스템 정리중... 🧹"
+            docker stop $(docker ps -aq) || true
+            docker rm $(docker ps -aq) || true
+            docker system prune -a -f --volumes || true
+            rm -rf /root/.npm || true
+            rm -rf /tmp/* || true
+            rm -rf /var/log/* || true
+            sudo apt-get clean || true
+            echo "디스크 공간 상태:"
+            df -h
+            du -sh /var/lib/docker || true
+
+  setup-ec2-environment:
+    runs-on: ubuntu-latest
+    needs: clean-ec2-system
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup EC2 server environment via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            mkdir -p /home/ubuntu/blabla
+            cd /home/ubuntu/blabla
+            if [ ! -d .git ]; then
+              git clone https://${{ secrets.GH_TOKEN }}@github.com/Jng-su/blabla.git . || { echo "Git 클론 실패! 😢"; exit 1; }
+            fi
+            git fetch origin
+            git pull origin main || { echo "Git 풀 실패! 😢"; exit 1; }
+            cd server
+            echo "${{ secrets.BE_ENV_PRODUCTION }}" > .env.production || { echo "백엔드 환경 설정 실패! 😢"; exit 1; }
+
+  build-and-deploy-server:
+    runs-on: ubuntu-latest
+    needs: setup-ec2-environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Build and deploy server on EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/blabla
+            docker network create blabla-network || true
+            echo "서버 서비스 빌드중... 🛠️"
+            docker-compose -f docker-compose.prod.yml build --no-cache blabla-server blabla-database blabla-redis || { 
+              echo "서버 이미지 빌드 실패! 😢"
+              docker-compose -f docker-compose.prod.yml logs blabla-server
+              exit 1
+            }
+            echo "서버 서비스 배포중... 🚀"
+            docker-compose -f docker-compose.prod.yml up -d blabla-server blabla-database blabla-redis || { 
+              echo "서버 컨테이너 배포 실패! 😢"
+              docker-compose -f docker-compose.prod.yml logs blabla-server
+              exit 1
+            }
+            while [ "$(docker inspect -f '{{.State.Health.Status}}' blabla-server)" != "healthy" ]; do
+              echo "서버 상태 확인 대기중... ✋"
+              sleep 2
+            done
+            while [ "$(docker inspect -f '{{.State.Health.Status}}' blabla-database)" != "healthy" ]; do
+              echo "데이터베이스 상태 확인 대기중... ✋"
+              sleep 2
+            done
+            echo "서버 및 의존 서비스 정상 작동! 👍"
+            docker ps -a
+
+  build-and-deploy-client-to-s3:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          cd client
+          npm install
+
+      - name: Build client
+        run: |
+          cd client
+          echo "${{ secrets.FE_ENV_PRODUCTION }}" > .env.production
+          npm run build
+          ls -l dist
+
+      - name: Deploy to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd client
+          aws s3 sync dist/ s3://blabla-client/ --delete
+
+  clean-docker-resources:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-client-to-s3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Clean Docker resources on EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "배포 후 Docker 정리중... 🧹"
+            docker rm $(docker ps -aq -f status=exited) || true
+            docker image prune -a -f || true
+            df -h
+            du -sh /var/lib/docker || true
