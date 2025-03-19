@@ -7,7 +7,9 @@ services:
     volumes:
       - ./server/src:/usr/src/app/src
     env_file: ./server/.env.development
-    ports: ["8000:8000"]
+    ports:
+      - "8000:8000"
+      - "8001:8001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ping"]
       interval: 15s

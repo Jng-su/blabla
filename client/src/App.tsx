@@ -1,29 +1,18 @@
-import { useState } from "react";
-import Home from "./components/Home";
-import SignIn from "./components/SignIn";
-import SignUp from "./components/SignUp";
-import Main from "./components/Main";
+import { useWebSocket } from "./hooks/websocket/useWebSocket";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<
-    "home" | "signIn" | "signUp" | "main"
-  >("home");
+  const { isConnected, messages, sendMessage } = useWebSocket();
 
   return (
     <div>
-      {currentScreen === "home" && (
-        <Home
-          onLogin={() => setCurrentScreen("signIn")}
-          onSignUp={() => setCurrentScreen("signUp")}
-        />
-      )}
-      {currentScreen === "signIn" && (
-        <SignIn onBack={() => setCurrentScreen("home")} />
-      )}
-      {currentScreen === "signUp" && (
-        <SignUp onBack={() => setCurrentScreen("home")} />
-      )}
-      {currentScreen === "main" && <Main />}
+      <h1>WebSocket Test</h1>
+      <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
+      <ul>
+        {messages.map((msg, i) => (
+          <li key={i}>{msg}</li>
+        ))}
+      </ul>
+      <button onClick={() => sendMessage("Hello!")}>Send</button>
     </div>
   );
 }

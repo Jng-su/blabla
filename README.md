@@ -19,5 +19,5 @@
 
 | 클라우드 및 배포 | 프레임워크   | CI/CD          | 컨테이너화 |
 | ---------------- | ------------ | -------------- | ---------- |
-| AWS EC2          | Nest.js      | GitHub Actions | Docker     |
+| AWS EC2          | Nest.js v10  | GitHub Actions | Docker     |
 | AWS RDS          | React + Vite |                |            |
