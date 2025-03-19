@@ -6,6 +6,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { FileModule } from './modules/file/file.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { FileModule } from './modules/file/file.module';
     AuthModule,
     UserModule,
     FileModule,
+    WebsocketModule,
   ],
 })
 export class AppModule {
