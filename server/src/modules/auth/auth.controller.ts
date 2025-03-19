@@ -18,11 +18,14 @@ export class AuthController {
     return this.authService.signin(signinDto);
   }
 
+  @Post('refresh')
+  async refreshToken(@Body() refreshToken: string) {
+    return await this.authService.refreshToken(refreshToken);
+  }
+
   @Post('signout')
   @UseGuards(JwtAuthGuard)
   async signout(@Req() req) {
-    const email = req.user.email;
-    console.log(req.user);
-    await this.authService.signout(email);
+    return await this.authService.signout(req.user.email);
   }
 }
