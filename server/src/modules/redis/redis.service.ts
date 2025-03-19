@@ -27,27 +27,30 @@ export class RedisService implements OnModuleDestroy {
     });
   }
 
-  async set(email: string, token: string, ttl?: number): Promise<void> {
-    const key = `jwt:${email}`;
-    if (ttl) {
-      await this.redis.setex(key, ttl, token);
-    } else {
-      await this.redis.set(key, token);
-    }
-    this.logger.log(`✅ Token set for ${email}`);
+  async set(
+    email: string,
+    access_token: string,
+    refresh_token: string,
+    accessTokenTTL: number,
+    refreshTokenTTL: number,
+  ): Promise<void> {
+    const accessKey = `access_token:${email}`;
+    const refreshKey = `refresh_token:${email}`;
+    await this.redis.setex(accessKey, accessTokenTTL, access_token);
+    await this.redis.setex(refreshKey, refreshTokenTTL, refresh_token);
+    this.logger.log(`✅ Tokens set for ${email}`);
   }
 
-  async get(email: string): Promise<string | null> {
-    return await this.redis.get(`jwt:${email}`);
+  async get(key: string): Promise<string | null> {
+    return await this.redis.get(`${key}`);
   }
 
-  async del(email: string): Promise<void> {
-    const key = `jwt:${email}`;
+  async del(key: string): Promise<void> {
     const result = await this.redis.del(key);
     if (result > 0) {
-      this.logger.log(`🗑️ Token deleted for ${email}`);
+      this.logger.log(`🗑️ Key deleted: ${key}`);
     } else {
-      this.logger.warn(`⚠️ No token found for ${email}`);
+      this.logger.warn(`⚠️ No key found for deletion: ${key}`);
     }
   }
 
