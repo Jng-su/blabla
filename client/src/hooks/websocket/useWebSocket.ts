@@ -6,9 +6,18 @@ export const useWebSocket = () => {
   const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
-    socket.on("connect", () => setIsConnected(true));
-    socket.on("disconnect", () => setIsConnected(false));
-    socket.on("message", (msg) => setMessages((prev) => [...prev, msg]));
+    socket.on("connect", () => {
+      console.log(`✅ Connected to WebSocket server`);
+      setIsConnected(true);
+    });
+    socket.on("disconnect", () => {
+      console.log("🔌 Disconnected from WebSocket server");
+      setIsConnected(false);
+    });
+    socket.on("message", (msg: string) => {
+      console.log("📬 Received:", msg);
+      setMessages((prev) => [...prev, msg]);
+    });
 
     if (socket.connected) {
       setIsConnected(true);
@@ -21,12 +30,14 @@ export const useWebSocket = () => {
     };
   }, []);
 
-  interface WebSocketMessage {
-    (msg: string): void;
-  }
-
-  const sendMessage: WebSocketMessage = (msg: string) =>
-    socket.emit("message", msg);
+  const sendMessage = (msg: string) => {
+    console.log("📤 Sending:", msg);
+    if (msg === "Hello") {
+      socket.emit("message", msg); // 개별 메시지
+    } else {
+      socket.emit("broadcast", msg); // 브로드캐스트
+    }
+  };
 
   return { isConnected, messages, sendMessage };
 };

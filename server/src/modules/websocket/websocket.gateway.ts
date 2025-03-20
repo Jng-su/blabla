@@ -1,23 +1,24 @@
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { ConfigService } from '@nestjs/config';
 
-@WebSocketGateway(8001)
+@WebSocketGateway(8001, {
+  cors: {
+    origin: (origin, callback) => {
+      const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+      callback(null, allowedOrigin);
+    },
+  },
+})
 export class WebsocketGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private configService: ConfigService) {}
-
   afterInit() {
-    const allowedOrigin = this.configService.get<string>('FRONTEND_URL');
-    this.server = new Server({
-      cors: {
-        origin: allowedOrigin,
-        methods: ['GET', 'POST'],
-      },
-    });
-    console.log('🚀 WebSocket Server initialized with origin:', allowedOrigin);
+    console.log('🚀 WebSocket Server initialized');
   }
 
   handleConnection(client: any) {
@@ -26,5 +27,19 @@ export class WebsocketGateway {
 
   handleDisconnect(client: any) {
     console.log('🔴 WebSocket : Client disconnected:', client.id);
+  }
+
+  @SubscribeMessage('message')
+  handleMessage(client: any, payload: string): void {
+    console.log('📩 Received message:', payload);
+    if (payload === 'Hello') {
+      client.emit('message', 'Hi back!');
+    }
+  }
+
+  @SubscribeMessage('broadcast')
+  handleBroadcast(client: any, payload: string): void {
+    console.log('📩 Received broadcast:', payload, 'from client:', client.id);
+    this.server.emit('message', `${client.id}: ${payload}`);
   }
 }
