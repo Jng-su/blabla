@@ -8,8 +8,10 @@ body {
   font-family: "NanumSquare", sans-serif;
   margin: 0;
   padding: 0;
+  background-color: #111827;
+  color: white;
 }
 
 .btn-primary {
-  @apply bg-primary hover:bg-primaryHover text-white py-2 px-4 rounded font-bold;
+  @apply bg-primary hover:bg-primaryHover text-white py-2 px-4 rounded font-bold w-full;
 }

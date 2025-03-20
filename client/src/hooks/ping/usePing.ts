@@ -8,9 +8,7 @@ export const usePing = () => {
   useEffect(() => {
     pingApi
       .getPing()
-      .then((data) => {
-        setResponse(data.message || "Success");
-      })
+      .then((data) => setResponse(data))
       .catch((err) => {
         console.error("Ping error:", err);
         setError(err.message);
