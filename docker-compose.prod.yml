@@ -7,7 +7,8 @@ services:
       dockerfile: Dockerfile.prod
     env_file: ./server/.env.production
     ports:
-      - "8000:8000"
+      - "8000:8000" # HTTP API
+      - "8001:8001" # WebSocket
     networks:
       - blabla-network
     healthcheck:

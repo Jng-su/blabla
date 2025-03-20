@@ -1,11 +1,10 @@
-import { Injectable, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { redisConfig } from '../../config/redis.config';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly redis: Redis;
-  private readonly logger = new Logger(RedisService.name);
 
   constructor() {
     const config = redisConfig();
@@ -15,15 +14,15 @@ export class RedisService implements OnModuleDestroy {
     });
 
     this.redis.on('connect', () => {
-      this.logger.log('🚀 Redis connected successfully');
+      console.log('🚀 Redis connected successfully');
     });
 
     this.redis.on('error', (err) => {
-      this.logger.error(`❌ Redis connection error: ${err.message}`);
+      console.error(`❌ Redis connection error: ${err.message}`);
     });
 
     this.redis.on('end', () => {
-      this.logger.warn('⚠️ Redis connection closed');
+      console.warn('⚠️ Redis connection closed');
     });
   }
 
@@ -38,7 +37,7 @@ export class RedisService implements OnModuleDestroy {
     const refreshKey = `refresh_token:${email}`;
     await this.redis.setex(accessKey, accessTokenTTL, access_token);
     await this.redis.setex(refreshKey, refreshTokenTTL, refresh_token);
-    this.logger.log(`✅ Tokens set for ${email}`);
+    console.log(`✅ Tokens set for ${email}`);
   }
 
   async get(key: string): Promise<string | null> {
@@ -48,14 +47,14 @@ export class RedisService implements OnModuleDestroy {
   async del(key: string): Promise<void> {
     const result = await this.redis.del(key);
     if (result > 0) {
-      this.logger.log(`🗑️ Key deleted: ${key}`);
+      console.log(`🗑️ Key deleted: ${key}`);
     } else {
-      this.logger.warn(`⚠️ No key found for deletion: ${key}`);
+      console.warn(`⚠️ No key found for deletion: ${key}`);
     }
   }
 
   onModuleDestroy() {
     this.redis.quit();
-    this.logger.log('🔌 Redis connection closed');
+    console.log('🔌 Redis connection closed');
   }
 }
