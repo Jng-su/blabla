@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -7,6 +13,9 @@ export class User {
 
   @Column()
   name: string;
+
+  @Column({ nullable: true, default: null })
+  statusMessage: string;
 
   @Column({
     default:
@@ -23,4 +32,12 @@ export class User {
 
   @Column({ default: 'user', nullable: true })
   role: string;
+
+  @ManyToMany(() => User, (user) => user.friends)
+  @JoinTable({
+    name: 'user_friends',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'friendId', referencedColumnName: 'id' },
+  })
+  friends: User[];
 }

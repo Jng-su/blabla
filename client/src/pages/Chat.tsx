@@ -1,10 +1,10 @@
 import { MessageSquareMore } from "lucide-react";
-import Category from "../components/chat/Category";
-import ChatArea from "../components/chat/ChatArea";
 import { useSignOutMutation } from "../query/mutation/auth";
 import { useAuthStatusQuery } from "../query/queries/auth";
 import { useState } from "react";
-import SideBar from "../components/chat/SideBar";
+import SideBar from "../components/main/SideBar";
+import Category from "../components/main/Category";
+import ChatArea from "../components/main/ChatArea";
 
 export default function Chat() {
   const { data } = useAuthStatusQuery();
@@ -43,7 +43,7 @@ export default function Chat() {
             <Category category={selectedCategory} />
           </div>
           <div className="w-3/4">
-            <ChatArea selectedFriend={selectedFriend} />
+            <ChatArea />
           </div>
         </div>
       </div>

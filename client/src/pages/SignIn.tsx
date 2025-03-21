@@ -27,7 +27,7 @@ export default function SignIn() {
       <div className="p-8 bg-white rounded-lg shadow-lg w-full max-w-sm">
         <div className="flex justify-center gap-2 mb-6">
           <MessageSquareMore size={36} className="text-primary" />
-          <h1 className="text-3xl font-bold text-center">블라블라</h1>
+          <h1 className="text-3xl font-bold text-center">blabla</h1>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -68,7 +68,10 @@ export default function SignIn() {
 
         <p className="text-gray-400 text-center mt-4">
           아직 회원이 아니신가요?{" "}
-          <Link to="/signup" className="text-blue-500 hover:underline">
+          <Link
+            to="/signup"
+            className="text-secondary hover:underline hover:text-primary"
+          >
             회원가입
           </Link>
         </p>
