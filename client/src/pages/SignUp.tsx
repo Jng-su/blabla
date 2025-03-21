@@ -78,7 +78,10 @@ export default function SignUp() {
 
         <p className="text-gray-400 text-center mt-4">
           이미 회원이신가요?{" "}
-          <Link to="/" className="text-blue-500 hover:underline">
+          <Link
+            to="/"
+            className="text-secondary hover:underline hover:text-primary"
+          >
             로그인
           </Link>
         </p>
