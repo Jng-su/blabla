@@ -1,20 +1,20 @@
+import { MessageSquareMore } from "lucide-react";
+import Category from "../components/chat/Category";
+import ChatArea from "../components/chat/ChatArea";
 import { useSignOutMutation } from "../query/mutation/auth";
 import { useAuthStatusQuery } from "../query/queries/auth";
+import { useState } from "react";
+import SideBar from "../components/chat/SideBar";
 
 export default function Chat() {
   const { data } = useAuthStatusQuery();
   const isAuthenticated = data?.isAuthenticated || false;
   const signOutMutation = useSignOutMutation();
-
-  // 더미 친구 데이터
-  const friends = [
-    { id: 1, name: "김철수" },
-    { id: 2, name: "이영희" },
-    { id: 3, name: "박민수" },
-    { id: 4, name: "최지은" },
-    { id: 5, name: "정수현" },
-    { id: 6, name: "한지민" },
-  ];
+  const [selectedCategory, setSelectedCategory] = useState<string>("messages");
+  const [selectedFriend, setSelectedFriend] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const handleSignOut = async () => {
     try {
@@ -27,27 +27,24 @@ export default function Chat() {
   if (!isAuthenticated) return null;
 
   return (
-    <div>
-      <div>
-        <h2>Friends</h2>
-        <div>
-          {friends.map((friend) => (
-            <div key={friend.id}>
-              <p>{friend.name}</p>
-            </div>
-          ))}
-        </div>
+    <div className="w-3/4 h-[85vh] flex flex-col bg-white rounded-lg shadow-lg mx-auto">
+      <div className="flex gap-2 py-4 border-b border-gray-200 p-4">
+        <MessageSquareMore size={30} className="text-primary" />
+        <p className="text-xl font-bold">blabla</p>
       </div>
-      <div>
-        <h1>Chat Room</h1>
-        <div>
-          <p>Welcome to the chat!</p>
-        </div>
-        <div>
-          <input type="text" placeholder="Type a message..." />
-          <button onClick={handleSignOut} disabled={signOutMutation.isPending}>
-            Sign Out
-          </button>
+      <div className="flex w-full h-full">
+        <SideBar
+          onCategoryChange={setSelectedCategory}
+          onSignOut={handleSignOut}
+          activeCategory={selectedCategory}
+        />
+        <div className="flex w-full">
+          <div className="w-1/4">
+            <Category category={selectedCategory} />
+          </div>
+          <div className="w-3/4">
+            <ChatArea selectedFriend={selectedFriend} />
+          </div>
         </div>
       </div>
     </div>

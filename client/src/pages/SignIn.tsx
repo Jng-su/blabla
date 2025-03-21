@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignInMutation } from "../query/mutation/auth";
+import { MessageSquareMore } from "lucide-react";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -22,33 +23,52 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-bold text-center mb-6">블라블라</h1>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <input
-          className="w-full p-3 mb-3 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-primaryHover"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="이메일"
-        />
-        <input
-          className="w-full p-3 mb-3 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-primaryHover"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          type="password"
-          placeholder="비밀번호"
-        />
-        <button
-          onClick={handleSignIn}
-          className="btn-primary"
-          disabled={signInMutation.isPending}
-        >
-          {signInMutation.isPending ? "로그인 중..." : "로그인"}
-        </button>
+    <div className="w-[25%] min-h-screen flex items-center justify-center">
+      <div className="p-8 bg-white rounded-lg shadow-lg w-full max-w-sm">
+        <div className="flex justify-center gap-2 mb-6">
+          <MessageSquareMore size={36} className="text-primary" />
+          <h1 className="text-3xl font-bold text-center">블라블라</h1>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="font-bold">Email</p>
+            <input
+              className="input-style w-full"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="이메일을 입력하세요"
+            />
+          </div>
+          <div>
+            <p className="font-bold">Password</p>
+            <input
+              className="input-style w-full"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="비밀번호를 입력하세요"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            onClick={handleSignIn}
+            disabled={signInMutation.isPending}
+            className="btn-primary w-full"
+          >
+            {signInMutation.isPending ? "로그인 중..." : "로그인"}
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-red-500 text-sm mt-4 text-center">{error}</p>
+        )}
+
         <p className="text-gray-400 text-center mt-4">
           아직 회원이 아니신가요?{" "}
-          <Link to="/signup" className="text-purple-400 hover:underline">
+          <Link to="/signup" className="text-blue-500 hover:underline">
             회원가입
           </Link>
         </p>

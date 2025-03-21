@@ -1,4 +1,4 @@
-import api from "../config/axios";
+import api from "./config/axios";
 import Cookies from "js-cookie";
 
 export const authApi = {
