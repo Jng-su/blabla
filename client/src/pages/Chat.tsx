@@ -5,6 +5,7 @@ import { useState } from "react";
 import SideBar from "../components/main/SideBar";
 import Category from "../components/main/Category";
 import ChatArea from "../components/main/ChatArea";
+import socket from "../api/socket";
 
 export default function Chat() {
   const { data } = useAuthStatusQuery();
@@ -23,7 +24,7 @@ export default function Chat() {
       alert("로그아웃에 실패했습니다.");
     }
   };
-
+  socket.emit("Socket test in FriendsList");
   if (!isAuthenticated) return null;
 
   return (

@@ -57,7 +57,7 @@ export default function Sidebar({
   const { mutate: inviteFriend, isPending: isInvitePending } =
     useInviteFriend();
   const { mutate: updateUser, isPending: isUpdatePending } = useUpdateUser();
-  const { data: currentUser, isLoading: isUserLoading } = useGetMe();
+  const { data: currentUser } = useGetMe();
 
   const handleAddFriend = () => {
     if (!email || !email.trim()) {
@@ -137,8 +137,6 @@ export default function Sidebar({
       });
     }
   };
-
-  if (isUserLoading) return <div>로딩 중...</div>;
 
   return (
     <div className="flex flex-col justify-between p-4 border-r border-gray-200">

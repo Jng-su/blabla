@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { FileModule } from './modules/file/file.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { MessageModule } from './modules/message/message.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     UserModule,
     FileModule,
     WebsocketModule,
+    ChatModule,
+    MessageModule,
   ],
 })
 export class AppModule {

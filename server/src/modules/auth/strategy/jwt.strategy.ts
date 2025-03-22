@@ -8,7 +8,14 @@ import { JwtPayload } from '../interface/jwt-payload.interface';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: (req) => {
+        // WebSocket일 경우 handshake.auth.token에서 토큰 가져오기
+        if (req?.handshake?.auth?.token) {
+          return req.handshake.auth.token;
+        }
+        // HTTP일 경우 Authorization 헤더에서 가져오기
+        return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+      },
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET_KEY'),
     });

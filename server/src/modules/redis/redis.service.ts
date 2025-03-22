@@ -37,7 +37,6 @@ export class RedisService implements OnModuleDestroy {
     const refreshKey = `refresh_token:${email}`;
     await this.redis.setex(accessKey, accessTokenTTL, access_token);
     await this.redis.setex(refreshKey, refreshTokenTTL, refresh_token);
-    console.log(`✅ Tokens set for ${email}`);
   }
 
   async get(key: string): Promise<string | null> {
