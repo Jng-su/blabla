@@ -23,4 +23,10 @@ export const authApi = {
     Cookies.remove("refresh_token");
     return response.data;
   },
+
+  // 토큰 정보
+  getMyInfo: async () => {
+    const response = await api.get("/auth/me");
+    return response.data;
+  },
 };

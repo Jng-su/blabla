@@ -8,7 +8,7 @@ import {
 import ConfirmModal from "../modals/ConfirmModal";
 import { useInviteFriend, useUpdateUser } from "../../query/mutation/user";
 import { useGetMe } from "../../query/queries/user";
-import { UpdateUserInfoModal } from "../modals/UpdateUserInfoModla";
+import { UpdateUserInfoModal } from "../modals/UpdateUserInfoModal";
 
 const buttonStyle =
   "hover:text-white hover:bg-primaryHover p-2 rounded-lg transition-all";
@@ -85,7 +85,6 @@ export default function Sidebar({
       },
     });
   };
-
   const handleLogoutConfirm = () => {
     onSignOut();
     setIsLogoutModalOpen(false);

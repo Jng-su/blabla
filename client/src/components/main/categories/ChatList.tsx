@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import CreateChatModal from "../../modals/CreateChatModal";
 import { useGetChats } from "../../../query/queries/chat";
-import socket from "../../../api/config/socket";
+import { authApi } from "../../../api/auth";
 
 interface Chat {
   chatId: string;
@@ -13,42 +13,40 @@ interface MessagesProps {
   onChatSelect: (chatId: string | null) => void;
 }
 
-export default function Messages({ onChatSelect }: MessagesProps) {
+export default function ChatList({ onChatSelect }: MessagesProps) {
   const [isCreateChatModalOpen, setIsCreateChatModalOpen] = useState(false);
   const { data: chatsData } = useGetChats();
   const [chats, setChats] = useState<Chat[]>(chatsData || []);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // 현재 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await authApi.getMyInfo();
+        setCurrentUserId(userInfo.id);
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
+
+  // chatsData가 업데이트될 때 상태 반영
   useEffect(() => {
     if (chatsData) {
       setChats(chatsData);
     }
   }, [chatsData]);
 
+  // 친구 선택 시 chatId 생성 후 ChatArea로 전달
   const handleSelectFriend = (friendId: string) => {
-    socket.emit("createChat", {
-      toUserId: friendId,
-      chatType: "personal",
-    });
+    if (!currentUserId) return;
+    const participants = [currentUserId, friendId].sort();
+    const chatId = `personal-${participants.join("-")}`;
+    onChatSelect(chatId);
+    setIsCreateChatModalOpen(false);
   };
-
-  useEffect(() => {
-    socket.on("chatCreated", (chat) => {
-      console.log("New chat created:", chat);
-      setChats((prev) => {
-        if (!prev.some((c) => c.chatId === chat.chatId)) {
-          return [...prev, chat];
-        }
-        return prev;
-      });
-      // 생성자가 새 채팅을 시작한 경우에만 선택
-      onChatSelect(chat.chatId); // 새 채팅방으로 이동
-      setIsCreateChatModalOpen(false); // 모달 닫기
-    });
-
-    return () => {
-      socket.off("chatCreated");
-    };
-  }, [onChatSelect]);
 
   const handleChatSelect = (chatId: string) => {
     onChatSelect(chatId);

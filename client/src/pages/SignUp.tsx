@@ -15,7 +15,7 @@ export default function SignUp() {
     setError("");
     try {
       await signUpMutation.mutateAsync({ name, email, password });
-      navigate("/chat");
+      navigate("/");
     } catch (err) {
       setError(
         (err as any).response?.data?.message || "회원가입에 실패했습니다."

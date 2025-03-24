@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { useAuthStatusQuery } from "./query/queries/auth";
 import { SpaRoutes } from "./routes/SpaRoutes";
 
-export default function AppContent() {
+export default function App() {
   const { data } = useAuthStatusQuery();
   const isAuthenticated = data?.isAuthenticated || false;
 

@@ -13,23 +13,24 @@ export class ChatService {
   async createOrGetChat(
     senderId: string,
     toUserId: string,
-    chatName?: string,
-    chatImage?: string,
+    name?: string,
+    image?: string,
   ): Promise<Chat> {
     const participants = [senderId, toUserId].sort();
     const chatId = `personal-${participants.join('-')}`;
 
     let chat = await this.chatRepository.findOne({ where: { chatId } });
     if (!chat) {
-      chat = new Chat();
-      chat.chatId = chatId;
-      chat.chatType = 'personal';
-      chat.participants = participants;
-      chat.name = chatName || `${senderId}-${toUserId}`;
-      chat.image = chatImage || null;
+      // 13. 채팅방이 없으면 새로 생성
+      chat = this.chatRepository.create({
+        chatId,
+        chatType: 'personal',
+        participants,
+        name: name || null,
+        image: image || null,
+      });
       await this.chatRepository.save(chat);
     }
-
     return chat;
   }
 

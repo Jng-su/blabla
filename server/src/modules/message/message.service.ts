@@ -17,35 +17,26 @@ export class MessageService {
     private messageRepository: Repository<Message>,
   ) {}
 
-  async createMessage(
+  async saveMessage(
     chatId: string,
     fromUserId: string,
     toUserId: string,
     content: string,
-    username: string, // username 추가
   ): Promise<Message> {
-    const message = new Message();
-    message.chatId = chatId;
-    message.fromUserId = fromUserId;
-    message.toUserId = toUserId;
-    message.content = content;
-    message.timestamp = new Date().toISOString();
+    const message = this.messageRepository.create({
+      chatId,
+      fromUserId,
+      toUserId,
+      content,
+      timestamp: new Date().toISOString(),
+    });
     return this.messageRepository.save(message);
   }
 
-  async getMessagesByChatId(
-    chatId: string,
-    userId: string,
-  ): Promise<ClientMessageDto[]> {
-    const messages = await this.messageRepository.find({
+  async getMessagesByChatId(chatId: string): Promise<Message[]> {
+    return this.messageRepository.find({
       where: { chatId },
-      relations: ['fromUser'], // User 관계 로드
+      order: { timestamp: 'ASC' },
     });
-    return messages.map((msg) => ({
-      senderId: msg.fromUserId,
-      content: msg.content,
-      timestamp: new Date(msg.timestamp),
-      username: msg.fromUser?.name || msg.fromUserId, // User 엔티티에서 이름 가져옴
-    }));
   }
 }

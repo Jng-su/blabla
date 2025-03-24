@@ -10,5 +10,6 @@ import { ChatModule } from '../chat/chat.module';
   imports: [TypeOrmModule.forFeature([Message, Chat]), ChatModule],
   controllers: [MessageController],
   providers: [MessageService],
+  exports: [MessageService],
 })
 export class MessageModule {}

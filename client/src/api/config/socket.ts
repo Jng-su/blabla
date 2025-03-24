@@ -10,12 +10,4 @@ const socket: Socket = io(WS_URL, {
   auth: { token: Cookies.get("access_token") },
 });
 
-socket.on("connect", () => {
-  console.log("📩 WebSocket: Connected to server");
-});
-
-socket.on("connect_error", (err) => {
-  console.log("Connection error:", err.message);
-});
-
 export default socket;

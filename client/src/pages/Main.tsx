@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { MessageSquareMore } from "lucide-react";
 import { useSignOutMutation } from "../query/mutation/auth";
 import { useAuthStatusQuery } from "../query/queries/auth";
@@ -6,24 +7,33 @@ import SideBar from "../components/main/SideBar";
 import Category from "../components/main/Category";
 import ChatArea from "../components/main/ChatArea";
 import socket from "../api/config/socket";
+import Cookies from "js-cookie";
 
-export default function Chat() {
+export default function Main() {
   const { data } = useAuthStatusQuery();
   const isAuthenticated = data?.isAuthenticated || false;
   const signOutMutation = useSignOutMutation();
   const [selectedCategory, setSelectedCategory] = useState<string>("messages");
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const token = Cookies.get("access_token");
+    if (!socket.connected) {
+      socket.auth = { token };
+      socket.connect();
+      console.log("📩 WebSocket: Connected");
+    }
+  }, [isAuthenticated]);
+
   const handleSignOut = async () => {
     try {
       await signOutMutation.mutateAsync();
+      socket.disconnect();
+      console.log("💤 WebSocket: Disconnected");
     } catch (err) {
       alert("로그아웃에 실패했습니다.");
     }
   };
-
-  socket.emit("Socket test in FriendsList");
-  if (!isAuthenticated) return null;
 
   return (
     <div className="w-3/4 h-[85vh] flex flex-col bg-white rounded-lg shadow-lg mx-auto">

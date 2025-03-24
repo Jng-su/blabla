@@ -1,121 +1,124 @@
-import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
-import { useGetMessages } from "../../query/queries/message";
-import { useAuthStatusQuery } from "../../query/queries/auth";
+import { useEffect, useState } from "react";
+import { authApi } from "../../api/auth";
+import { messageApi } from "../../api/message";
 import socket from "../../api/config/socket";
 
 interface Message {
-  senderId: string;
+  chatId: string;
+  fromUserId: string;
+  toUserId: string;
   content: string;
-  timestamp: Date;
-  username: string;
+  timestamp: string; // 서버에서 문자열로 오므로 그대로 유지
 }
 
-interface ChatAreaProps {
+export default function ChatArea({
+  selectedChatId,
+}: {
   selectedChatId: string | null;
-}
-
-export default function ChatArea({ selectedChatId }: ChatAreaProps) {
-  const [newMessage, setNewMessage] = useState<string>("");
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const { data: messagesData } = useGetMessages(selectedChatId);
-  const { data: authData } = useAuthStatusQuery();
-  const currentUserId = authData?.user?.id || null;
-
+  // 현재 사용자 정보 가져오기
   useEffect(() => {
-    if (messagesData) {
-      setMessages(messagesData);
-    } else {
-      setMessages([]);
-    }
-  }, [messagesData, selectedChatId]);
-
-  useEffect(() => {
-    socket.on("chatCreated", (chat) => {
-      console.log("Chat created:", chat);
-      if (selectedChatId === chat.chatId) {
-        setMessages([]);
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await authApi.getMyInfo();
+        setCurrentUserId(userInfo.id); // 사용자 ID 설정
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
       }
-    });
-
-    socket.on("messageReceived", (message: Message, chatId: string) => {
-      if (chatId === selectedChatId) {
-        setMessages((prev) => [...prev, message]);
-      }
-    });
-
-    return () => {
-      socket.off("chatCreated");
-      socket.off("messageReceived");
     };
+    fetchUserInfo();
+  }, []);
+
+  // 선택된 chatId로 메시지 조회
+  useEffect(() => {
+    if (selectedChatId) {
+      const fetchMessages = async () => {
+        try {
+          const fetchedMessages = await messageApi.getMessagesByChatId(
+            selectedChatId
+          );
+          setMessages(fetchedMessages);
+        } catch (error) {
+          console.error("Failed to fetch messages:", error);
+          setMessages([]); // 채팅 내역 없으면 빈 배열
+        }
+      };
+      fetchMessages();
+    }
   }, [selectedChatId]);
 
-  const handleSendMessage = () => {
-    if (!newMessage || !selectedChatId) return;
+  // WebSocket 실시간 메시지 수신
+  useEffect(() => {
+    if (selectedChatId) {
+      socket.on("privateMessage", (data: Message) => {
+        if (data.chatId === selectedChatId) {
+          setMessages((prev) => [
+            ...prev,
+            { ...data, timestamp: data.timestamp },
+          ]);
+        }
+      });
 
-    socket.emit("privateMessage", {
-      chatId: selectedChatId,
-      content: newMessage,
-    });
-    setNewMessage("");
+      return () => {
+        socket.off("privateMessage");
+      };
+    }
+  }, [selectedChatId]);
+
+  // 메시지 전송
+  const handleSendMessage = () => {
+    if (newMessage.trim() && selectedChatId && currentUserId) {
+      const participants = selectedChatId.split("personal-")[1].split("-");
+      const toUserId = participants.find((id) => id !== currentUserId); // 상대방 ID 추출
+      if (toUserId) {
+        socket.emit("privateMessage", {
+          toUserId,
+          content: newMessage,
+        });
+        setNewMessage("");
+      }
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <div className="flex-1 p-6 overflow-y-auto">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 p-4 overflow-y-auto">
         {selectedChatId ? (
           messages.length > 0 ? (
-            messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-2 flex ${
-                  message.senderId === currentUserId
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-xs p-3 rounded-lg ${
-                    message.senderId === currentUserId
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-black"
-                  }`}
-                >
-                  <p className="font-semibold">{message.username}</p>
-                  <p>{message.content}</p>
-                  <p className="text-xs opacity-75">
-                    {message.timestamp.toLocaleString()}
-                  </p>
-                </div>
+            messages.map((msg) => (
+              <div key={msg.timestamp} className="mb-2">
+                <p>
+                  <strong>{msg.fromUserId}:</strong> {msg.content}{" "}
+                  <span className="text-gray-500 text-sm">
+                    ({new Date(msg.timestamp).toLocaleTimeString()})
+                  </span>
+                </p>
               </div>
             ))
           ) : (
-            <p>No messages yet.</p>
+            <p>아직 메시지가 없습니다. 대화를 시작해보세요!</p>
           )
         ) : (
-          <p>Select a chat to start messaging.</p>
+          <p>채팅을 선택해주세요.</p>
         )}
       </div>
       {selectedChatId && (
-        <div className="p-3 border-t">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="메시지를 입력하세요..."
-              className="flex-1 px-4 text-sm border border-gray-300 rounded-lg"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleSendMessage();
-                }
-              }}
-            />
-            <button className="btn-primary px-4" onClick={handleSendMessage}>
-              <Send size={20} />
-            </button>
-          </div>
+        <div className="p-4 border-t">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            className="w-full p-2 border rounded"
+            placeholder="메시지를 입력하세요..."
+            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+          />
+          <button onClick={handleSendMessage} className="mt-2 btn-primary">
+            전송
+          </button>
         </div>
       )}
     </div>
