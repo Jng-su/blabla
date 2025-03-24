@@ -1,18 +1,17 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
 
 const WS_URL = import.meta.env.VITE_WS_URL || "http://localhost:8001";
-const accessToken = Cookies.get("access_token");
 
-const socket = io(WS_URL, {
+const socket: Socket = io(WS_URL, {
   transports: ["websocket"],
   reconnection: true,
   reconnectionAttempts: 5,
-  auth: { token: accessToken },
+  auth: { token: Cookies.get("access_token") },
 });
 
 socket.on("connect", () => {
-  console.log(`Connected with token: ${accessToken?.substring(0, 10)}...`);
+  console.log("📩 WebSocket: Connected to server");
 });
 
 socket.on("connect_error", (err) => {

@@ -5,13 +5,13 @@ import { Friend } from "../../interfaces/components/Friend.interface";
 interface CreateChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (chatType: "personal", selectedFriendId: string) => void;
+  onSelectFriend: (selectedFriendId: string) => void;
 }
 
 export default function CreateChatModal({
   isOpen,
   onClose,
-  onCreate,
+  onSelectFriend,
 }: CreateChatModalProps) {
   const [selectedFriendId, setSelectedFriendId] = useState<string>("");
   const { data: friends, isLoading } = useGetFriends();
@@ -20,9 +20,10 @@ export default function CreateChatModal({
     setSelectedFriendId(friendId);
   };
 
-  const handleCreate = () => {
+  const handleSelect = () => {
     if (selectedFriendId) {
-      onCreate("personal", selectedFriendId);
+      onSelectFriend(selectedFriendId);
+      onClose();
     } else {
       alert("친구를 선택해주세요.");
     }
@@ -33,7 +34,7 @@ export default function CreateChatModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-        <h2 className="text-lg font-semibold mb-4">개인 채팅 생성</h2>
+        <h2 className="text-lg font-semibold mb-4">개인 채팅 시작</h2>
         <div className="max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">
           {isLoading ? (
             <p>로딩 중...</p>
@@ -44,11 +45,19 @@ export default function CreateChatModal({
                 onClick={() => handleFriendToggle(friend.id)}
                 className={`p-2 cursor-pointer ${
                   selectedFriendId === friend.id
-                    ? "bg-gray-200"
-                    : "hover:bg-gray-100"
+                    ? "bg-gray-100"
+                    : "hover:bg-gray-300"
                 }`}
               >
-                {friend.name}
+                <div className="flex items-center gap-2">
+                  <img
+                    src={friend.profile_image}
+                    alt={`${friend.name}의 프로필`}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <p className="font-semibold">{friend.name}</p>
+                  <p className="text-xs text-gray-500">{friend.email}</p>
+                </div>
               </div>
             ))
           ) : (
@@ -56,11 +65,14 @@ export default function CreateChatModal({
           )}
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="btn-secondary">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 rounded-lg"
+          >
             취소
           </button>
-          <button onClick={handleCreate} className="btn-primary">
-            생성
+          <button onClick={handleSelect} className="btn-primary px-4 py-2">
+            선택
           </button>
         </div>
       </div>

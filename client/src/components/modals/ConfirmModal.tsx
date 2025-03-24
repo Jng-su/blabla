@@ -27,7 +27,10 @@ export default function ConfirmModal({
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
         {content && <div className="mb-4">{content}</div>}
         <div className="flex justify-end gap-2">
-          <button className="px-4 py-2 text-gray-600" onClick={onClose}>
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-lg"
+            onClick={onClose}
+          >
             {cancelText}
           </button>
           <button className="btn-primary px-4 py-2" onClick={onConfirm}>

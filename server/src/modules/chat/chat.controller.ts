@@ -10,6 +10,11 @@ export class ChatController {
   @Get()
   @UseGuards(JwtAuthGuard)
   async getChats(@Req() req: AuthRequest) {
-    return this.chatService.getUserChats(req.user.id);
+    const chats = await this.chatService.getUserChats(req.user.id);
+    return chats.map((chat) => ({
+      chatId: chat.chatId,
+      chatType: chat.chatType as 'personal',
+      participants: chat.participants,
+    }));
   }
 }

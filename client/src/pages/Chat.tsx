@@ -5,17 +5,14 @@ import { useState } from "react";
 import SideBar from "../components/main/SideBar";
 import Category from "../components/main/Category";
 import ChatArea from "../components/main/ChatArea";
-import socket from "../api/socket";
+import socket from "../api/config/socket";
 
 export default function Chat() {
   const { data } = useAuthStatusQuery();
   const isAuthenticated = data?.isAuthenticated || false;
   const signOutMutation = useSignOutMutation();
   const [selectedCategory, setSelectedCategory] = useState<string>("messages");
-  const [selectedFriend, setSelectedFriend] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     try {
@@ -24,6 +21,7 @@ export default function Chat() {
       alert("로그아웃에 실패했습니다.");
     }
   };
+
   socket.emit("Socket test in FriendsList");
   if (!isAuthenticated) return null;
 
@@ -41,10 +39,13 @@ export default function Chat() {
         />
         <div className="flex w-full">
           <div className="w-1/4">
-            <Category category={selectedCategory} />
+            <Category
+              category={selectedCategory}
+              onChatSelect={setSelectedChatId}
+            />
           </div>
           <div className="w-3/4">
-            <ChatArea />
+            <ChatArea selectedChatId={selectedChatId} />
           </div>
         </div>
       </div>

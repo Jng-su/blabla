@@ -11,12 +11,7 @@ interface AuthSocket extends Socket {
 }
 
 @WebSocketGateway(8001, {
-  cors: {
-    origin: (origin, callback) => {
-      const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
-      callback(null, allowedOrigin);
-    },
-  },
+  cors: { origin: '*' },
 })
 export class MessageGateway {
   constructor(
@@ -25,20 +20,18 @@ export class MessageGateway {
     private clientManager: SocketClientManager,
   ) {}
 
-  @SubscribeMessage('privateMessage')
+  @SubscribeMessage('createChat')
   @UseGuards(JwtAuthGuard)
-  async handlePrivateMessage(
+  async handleCreateChat(
     client: AuthSocket,
     payload: {
       toUserId: string;
-      content: string;
+      chatType: string;
       chatName?: string;
       chatImage?: string;
     },
   ): Promise<void> {
     const senderId = client.user!.id;
-    const receiverSocket = this.clientManager.getClient(payload.toUserId);
-
     const chat = await this.chatService.createOrGetChat(
       senderId,
       payload.toUserId,
@@ -46,31 +39,72 @@ export class MessageGateway {
       payload.chatImage,
     );
 
+    // 생성자에게만 알림
+    client.emit('chatCreated', {
+      chatId: chat.chatId,
+      chatType: chat.chatType,
+      participants: chat.participants,
+      name: chat.name,
+      image: chat.image,
+    });
+  }
+
+  @SubscribeMessage('privateMessage')
+  @UseGuards(JwtAuthGuard)
+  async handlePrivateMessage(
+    client: AuthSocket,
+    payload: {
+      chatId: string;
+      content: string;
+    },
+  ): Promise<void> {
+    const senderId = client.user!.id;
+    const senderUsername = client.user!.name;
+
+    const chat = await this.chatService.getChatById(payload.chatId);
+    if (!chat || !chat.participants.includes(senderId)) {
+      throw new Error('Invalid chat or access denied');
+    }
+
+    const toUserId = chat.participants.find((id) => id !== senderId);
+    if (!toUserId) {
+      throw new Error('No recipient found in chat participants');
+    }
+
     const message = await this.messageService.createMessage(
       chat.chatId,
       senderId,
-      payload.toUserId,
+      toUserId,
       payload.content,
+      senderUsername,
     );
 
-    if (receiverSocket) {
-      receiverSocket.emit('privateMessage', message);
-    }
-    client.emit('privateMessage', message);
+    const formattedMessage = {
+      senderId: message.fromUserId,
+      content: message.content,
+      timestamp: new Date(message.timestamp),
+      username: senderUsername,
+    };
 
-    if (message.id === message.chat.messages[0]?.id) {
-      chat.participants.forEach((userId) => {
-        const userSocket = this.clientManager.getClient(userId);
-        if (userSocket) {
-          userSocket.emit('chatCreated', {
-            chatId: chat.chatId,
-            chatType: chat.chatType,
-            participants: chat.participants,
-            name: chat.name,
-            image: chat.image,
-          });
-        }
-      });
+    const receiverSocket = this.clientManager.getClient(toUserId);
+    if (receiverSocket) {
+      receiverSocket.emit('messageReceived', formattedMessage, chat.chatId);
+
+      // 첫 메시지일 경우 수신자에게 채팅 생성 알림
+      const messages = await this.messageService.getMessagesByChatId(
+        chat.chatId,
+        toUserId,
+      );
+      if (messages.length === 1) {
+        receiverSocket.emit('chatCreated', {
+          chatId: chat.chatId,
+          chatType: chat.chatType,
+          participants: chat.participants,
+          name: chat.name,
+          image: chat.image,
+        });
+      }
     }
+    client.emit('messageReceived', formattedMessage, chat.chatId);
   }
 }

@@ -30,7 +30,7 @@ export default function FriendsList() {
           <img
             src={user.profile_image}
             alt={`${user.name}의 프로필`}
-            className="w-12 h-12 rounded-xl object-cover ml-2"
+            className="w-12 h-12 rounded-full ml-2"
             onError={(e) =>
               (e.currentTarget.src =
                 "https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-profile-image.png")

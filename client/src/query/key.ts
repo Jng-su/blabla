@@ -4,4 +4,6 @@ export const queryKeys = {
   friendsList: ["friendsList"],
   users: ["users"],
   user: ["user"],
+  chats: ["chats"],
+  messages: (chatId: string | null) => ["messages", chatId],
 };

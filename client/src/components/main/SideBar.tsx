@@ -2,13 +2,13 @@ import { useState, ChangeEvent, JSX } from "react";
 import {
   LogOut,
   MessageSquareMore,
-  Settings,
   UserRoundPlus,
   UsersRound,
 } from "lucide-react";
 import ConfirmModal from "../modals/ConfirmModal";
 import { useInviteFriend, useUpdateUser } from "../../query/mutation/user";
 import { useGetMe } from "../../query/queries/user";
+import { UpdateUserInfoModal } from "../modals/UpdateUserInfoModla";
 
 const buttonStyle =
   "hover:text-white hover:bg-primaryHover p-2 rounded-lg transition-all";
@@ -162,7 +162,15 @@ export default function Sidebar({
       </div>
       <div className="flex flex-col gap-4">
         <Button
-          icon={<Settings size={24} />}
+          icon={
+            <div className="w-6 h-6 rounded-full overflow-hidden">
+              <img
+                src={currentUser?.profile_image || ""}
+                alt="프로필 이미지"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          }
           category="settings"
           activeCategory={activeCategory}
           onClick={handleSettingsOpen}
@@ -214,57 +222,17 @@ export default function Sidebar({
       />
 
       {/* 설정 모달 */}
-      <ConfirmModal
+      <UpdateUserInfoModal
         isOpen={isSettingsModalOpen}
         onClose={() => {
           setIsSettingsModalOpen(false);
           setSelectedFile(null);
         }}
-        title="내 정보 수정"
-        content={
-          <div className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="이름"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={userData.name}
-              onChange={(e) =>
-                setUserData({ ...userData, name: e.target.value })
-              }
-              disabled={isUpdatePending}
-            />
-            <div className="flex flex-col gap-2">
-              <img
-                src={userData.profile_image}
-                alt="프로필 이미지"
-                className="w-20 h-20 rounded-full object-cover"
-                onError={(e) =>
-                  (e.currentTarget.src =
-                    "https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-profile-image.png")
-                }
-              />
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full p-2 border border-gray-300 rounded-lg"
-                onChange={handleFileChange}
-                disabled={isUpdatePending}
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="상태 메시지"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={userData.statusMessage}
-              onChange={(e) =>
-                setUserData({ ...userData, statusMessage: e.target.value })
-              }
-              disabled={isUpdatePending}
-            />
-          </div>
-        }
-        confirmText={isUpdatePending ? "수정 중..." : "수정"}
+        userData={userData}
         onConfirm={handleUpdateUser}
+        onUserDataChange={setUserData}
+        onFileChange={handleFileChange}
+        isPending={isUpdatePending}
       />
     </div>
   );

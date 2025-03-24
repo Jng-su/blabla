@@ -39,4 +39,11 @@ export class ChatService {
       relations: ['messages'],
     });
   }
+
+  async getChatById(chatId: string): Promise<Chat | null> {
+    return this.chatRepository.findOne({
+      where: { chatId },
+      relations: ['messages'],
+    });
+  }
 }

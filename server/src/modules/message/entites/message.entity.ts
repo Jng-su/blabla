@@ -1,3 +1,4 @@
+import { User } from 'src/modules/user/entites/user.entity';
 import { Chat } from '../../chat/entites/chat.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 
@@ -12,10 +13,13 @@ export class Message {
   @ManyToOne(() => Chat, (chat) => chat.messages)
   chat: Chat;
 
-  @Column()
+  @Column({ name: 'from_user_id' }) // 명시적으로 컬럼 이름 지정
   fromUserId: string;
 
-  @Column()
+  @ManyToOne(() => User, { nullable: false }) // fromUserId가 NOT NULL이어야 함
+  fromUser: User;
+
+  @Column({ name: 'to_user_id' })
   toUserId: string;
 
   @Column()
