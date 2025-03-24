@@ -1,8 +1,15 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsArray, IsOptional } from 'class-validator';
 
 export class CreateChatDto {
   @IsString()
-  toUserId: string;
+  chatId: string;
+
+  @IsString()
+  chatType: 'personal';
+
+  @IsArray()
+  @IsString({ each: true })
+  participants: string[];
 
   @IsString()
   @IsOptional()

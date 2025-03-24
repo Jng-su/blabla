@@ -8,7 +8,7 @@ interface Message {
   fromUserId: string;
   toUserId: string;
   content: string;
-  timestamp: string; // 서버에서 문자열로 오므로 그대로 유지
+  timestamp: string;
 }
 
 export default function ChatArea({
@@ -25,7 +25,7 @@ export default function ChatArea({
     const fetchUserInfo = async () => {
       try {
         const userInfo = await authApi.getMyInfo();
-        setCurrentUserId(userInfo.id); // 사용자 ID 설정
+        setCurrentUserId(userInfo.id);
       } catch (error) {
         console.error("Failed to fetch user info:", error);
       }
@@ -44,7 +44,7 @@ export default function ChatArea({
           setMessages(fetchedMessages);
         } catch (error) {
           console.error("Failed to fetch messages:", error);
-          setMessages([]); // 채팅 내역 없으면 빈 배열
+          setMessages([]);
         }
       };
       fetchMessages();
@@ -73,12 +73,14 @@ export default function ChatArea({
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedChatId && currentUserId) {
       const participants = selectedChatId.split("personal-")[1].split("-");
-      const toUserId = participants.find((id) => id !== currentUserId); // 상대방 ID 추출
+      const toUserId = participants.find((id) => id !== currentUserId);
       if (toUserId) {
-        socket.emit("privateMessage", {
+        const messageData = {
+          chatId: selectedChatId,
           toUserId,
           content: newMessage,
-        });
+        };
+        socket.emit("privateMessage", messageData);
         setNewMessage("");
       }
     }
@@ -90,33 +92,57 @@ export default function ChatArea({
         {selectedChatId ? (
           messages.length > 0 ? (
             messages.map((msg) => (
-              <div key={msg.timestamp} className="mb-2">
-                <p>
-                  <strong>{msg.fromUserId}:</strong> {msg.content}{" "}
-                  <span className="text-gray-500 text-sm">
-                    ({new Date(msg.timestamp).toLocaleTimeString()})
-                  </span>
-                </p>
+              <div
+                key={msg.timestamp}
+                className={`mb-2 flex ${
+                  msg.fromUserId === currentUserId
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-xs p-2 rounded-lg ${
+                    msg.fromUserId === currentUserId
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-800"
+                  }`}
+                >
+                  <p>
+                    <strong>
+                      {msg.fromUserId === currentUserId ? "나" : msg.fromUserId}
+                      :
+                    </strong>{" "}
+                    {msg.content}{" "}
+                    <span className="text-xs opacity-75">
+                      ({new Date(msg.timestamp).toLocaleTimeString()})
+                    </span>
+                  </p>
+                </div>
               </div>
             ))
           ) : (
-            <p>아직 메시지가 없습니다. 대화를 시작해보세요!</p>
+            <p className="text-gray-500">
+              아직 메시지가 없습니다. 대화를 시작해보세요!
+            </p>
           )
         ) : (
-          <p>채팅을 선택해주세요.</p>
+          <p className="text-gray-500">채팅을 선택해주세요.</p>
         )}
       </div>
       {selectedChatId && (
-        <div className="p-4 border-t">
+        <div className="p-4 border-t flex items-center">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="flex-1 p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="메시지를 입력하세요..."
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
-          <button onClick={handleSendMessage} className="mt-2 btn-primary">
+          <button
+            onClick={handleSendMessage}
+            className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
+          >
             전송
           </button>
         </div>

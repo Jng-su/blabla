@@ -39,4 +39,8 @@ export class MessageService {
       order: { timestamp: 'ASC' },
     });
   }
+
+  async getMessageCount(chatId: string): Promise<number> {
+    return this.messageRepository.count({ where: { chatId } });
+  }
 }

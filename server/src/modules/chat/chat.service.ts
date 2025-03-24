@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
+import { UserService } from '../user/user.service';
 import { Chat } from './entites/chat.entity';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class ChatService {
   constructor(
     @InjectRepository(Chat)
     private chatRepository: Repository<Chat>,
+    private userService: UserService,
   ) {}
 
   async createOrGetChat(
@@ -21,7 +23,6 @@ export class ChatService {
 
     let chat = await this.chatRepository.findOne({ where: { chatId } });
     if (!chat) {
-      // 13. 채팅방이 없으면 새로 생성
       chat = this.chatRepository.create({
         chatId,
         chatType: 'personal',
@@ -35,10 +36,35 @@ export class ChatService {
   }
 
   async getUserChats(userId: string): Promise<Chat[]> {
-    return this.chatRepository.find({
+    const chats = await this.chatRepository.find({
       where: { participants: Like(`%${userId}%`) },
       relations: ['messages'],
     });
+
+    // 메시지가 있는 채팅만 필터링
+    const activeChats = chats.filter(
+      (chat) => chat.messages && chat.messages.length > 0,
+    );
+
+    return Promise.all(
+      activeChats.map(async (chat) => {
+        let chatName = chat.name;
+        let chatImage = chat.image;
+        if (chat.chatType === 'personal') {
+          const opponentId = chat.participants.find((id) => id !== userId);
+          if (opponentId) {
+            const opponent = await this.userService.getUserById(opponentId);
+            chatName = opponent.name;
+            chatImage = opponent.profile_image;
+          }
+        }
+        return {
+          ...chat,
+          name: chatName || 'Unnamed Chat',
+          image: chatImage || null,
+        };
+      }),
+    );
   }
 
   async getChatById(chatId: string): Promise<Chat | null> {

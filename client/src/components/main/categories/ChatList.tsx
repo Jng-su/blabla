@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import CreateChatModal from "../../modals/CreateChatModal";
 import { useGetChats } from "../../../query/queries/chat";
 import { authApi } from "../../../api/auth";
+import socket from "../../../api/config/socket";
 
 interface Chat {
   chatId: string;
-  chatType: "personal";
+  chatType: "personal" | "group";
   participants: string[];
+  name?: string;
+  image?: string;
 }
 
 interface MessagesProps {
@@ -19,7 +22,6 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
   const [chats, setChats] = useState<Chat[]>(chatsData || []);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // 현재 사용자 정보 가져오기
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -32,18 +34,34 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
     fetchUserInfo();
   }, []);
 
-  // chatsData가 업데이트될 때 상태 반영
   useEffect(() => {
     if (chatsData) {
+      console.log("Chats from useGetChats:", chatsData);
       setChats(chatsData);
     }
   }, [chatsData]);
 
-  // 친구 선택 시 chatId 생성 후 ChatArea로 전달
+  useEffect(() => {
+    socket.on("chatCreated", (newChat: Chat) => {
+      console.log("Chat created event:", newChat);
+      setChats((prev) => {
+        if (prev.some((chat) => chat.chatId === newChat.chatId)) return prev;
+        return [...prev, newChat];
+      });
+    });
+
+    return () => {
+      socket.off("chatCreated");
+    };
+  }, []);
+
   const handleSelectFriend = (friendId: string) => {
     if (!currentUserId) return;
     const participants = [currentUserId, friendId].sort();
     const chatId = `personal-${participants.join("-")}`;
+
+    console.log("Creating chat with:", { chatId, participants });
+    socket.emit("createChat", { chatId, chatType: "personal", participants });
     onChatSelect(chatId);
     setIsCreateChatModalOpen(false);
   };
@@ -69,7 +87,12 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
               className="p-2 border-b cursor-pointer hover:bg-gray-100"
               onClick={() => handleChatSelect(chat.chatId)}
             >
-              <p>참여자: {chat.participants.join(", ")}</p>
+              <img
+                src={chat.image || "https://via.placeholder.com/40"}
+                alt={chat.name || "User"}
+                className="w-10 h-10 rounded-full mr-3 object-cover"
+              />
+              <p>{chat.name || "Unnamed Chat"}</p>
             </div>
           ))
         ) : (

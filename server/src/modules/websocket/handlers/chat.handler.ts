@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ChatService } from '../../chat/chat.service';
 import { WebsocketService } from '../services/websocket.service';
+import { UserService } from '../../user/user.service';
 import { CreateChatDto } from '../dto/create-chat.dto';
 import { AuthSocket } from '../interface/auth-socket.interface';
 
@@ -9,6 +10,7 @@ export class ChatHandler {
   constructor(
     private chatService: ChatService,
     private websocketService: WebsocketService,
+    private userService: UserService,
   ) {}
 
   async handleCreateChat(
@@ -16,45 +18,18 @@ export class ChatHandler {
     createChatDto: CreateChatDto,
   ): Promise<void> {
     const senderId = client.user!.id;
-    const senderName = client.user!.name;
+    const toUserId = createChatDto.participants.find((id) => id !== senderId);
 
     console.log(
-      `Creating chat for sender: ${senderId}, to: ${createChatDto.toUserId}`,
+      `✅ Creating chat for sender UserId: ${senderId}, toUserId: ${toUserId}`,
     );
-    if (senderId === createChatDto.toUserId) {
+    if (senderId === toUserId) {
       throw new Error('Cannot create chat with yourself');
     }
 
-    // 6. ChatService로 채팅방 생성/조회 요청
-    const chat = await this.chatService.createOrGetChat(
-      senderId,
-      createChatDto.toUserId,
-      createChatDto.name,
-      createChatDto.image,
-    );
+    // 채팅 생성만
+    await this.chatService.createOrGetChat(senderId, toUserId);
 
-    // 7. 각 참여자에게 상대방 이름으로 채팅 정보 구성 후 전송
-    const participants = chat.participants;
-    participants.forEach((participantId) => {
-      const isSender = participantId === senderId;
-      const opponentName = isSender
-        ? createChatDto.name || senderName
-        : client.user!.name;
-
-      const chatData = {
-        chatId: chat.chatId,
-        chatType: chat.chatType,
-        participants: chat.participants,
-        name: opponentName,
-        image: chat.image,
-      };
-
-      // 8. WebsocketService로 클라이언트에 'chatCreated' 이벤트 전송
-      this.websocketService.broadcastEvent('chatCreated', chatData, [
-        participantId,
-      ]);
-    });
-
-    console.log(`Chat created successfully for sender: ${senderId}`);
+    console.log(`Chat created but not broadcasted yet for sender: ${senderId}`);
   }
 }

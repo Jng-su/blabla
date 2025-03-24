@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ChatService } from '../../chat/chat.service';
 import { MessageService } from '../../message/message.service';
 import { WebsocketService } from '../services/websocket.service';
+import { UserService } from '../../user/user.service';
 import { PrivateMessageDto } from '../dto/private-message.dto';
 import { AuthSocket } from '../interface/auth-socket.interface';
 
@@ -11,6 +12,7 @@ export class MessageHandler {
     private chatService: ChatService,
     private messageService: MessageService,
     private websocketService: WebsocketService,
+    private userService: UserService,
   ) {}
 
   async handlePrivateMessage(
@@ -26,12 +28,11 @@ export class MessageHandler {
       throw new Error('Message content exceeds 500 characters');
     }
 
-    // 9. ChatService로 채팅방 조회/생성 (없으면 생성됨)
-    const chat = await this.chatService.createOrGetChat(
-      senderId,
-      privateMessageDto.toUserId,
-    );
-    // 10. MessageService로 메시지 저장
+    const chat = await this.chatService.getChatById(privateMessageDto.chatId);
+    if (!chat) {
+      throw new Error('Chat not found');
+    }
+
     const message = await this.messageService.saveMessage(
       chat.chatId,
       senderId,
@@ -39,7 +40,31 @@ export class MessageHandler {
       privateMessageDto.content,
     );
 
-    // 11. 메시지 데이터 구성
+    const messageCount = await this.messageService.getMessageCount(chat.chatId);
+    if (messageCount === 1) {
+      const participants = chat.participants;
+      for (const participantId of participants) {
+        const isSender = participantId === senderId;
+        const opponent = isSender
+          ? await this.userService.getUserById(
+              participants.find((id) => id !== senderId)!,
+            )
+          : await this.userService.getUserById(senderId);
+
+        const chatData = {
+          chatId: chat.chatId,
+          chatType: chat.chatType,
+          participants: chat.participants,
+          name: opponent.name,
+          image: opponent.profile_image || null,
+        };
+
+        this.websocketService.broadcastEvent('chatCreated', chatData, [
+          participantId,
+        ]);
+      }
+    }
+
     const messageData = {
       chatId: chat.chatId,
       fromUserId: message.fromUserId,
@@ -48,7 +73,6 @@ export class MessageHandler {
       timestamp: message.timestamp,
     };
 
-    // 12. WebsocketService로 클라이언트에 'privateMessage' 이벤트 전송
     this.websocketService.broadcastEvent(
       'privateMessage',
       messageData,
