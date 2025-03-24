@@ -4,7 +4,7 @@ import { userApi } from "../../api/user";
 
 export const useGetMe = () => {
   return useQuery({
-    queryKey: queryKeys.user,
+    queryKey: queryKeys.myInfo,
     queryFn: userApi.getMe,
   });
 };

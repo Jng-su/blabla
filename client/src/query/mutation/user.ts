@@ -24,7 +24,7 @@ export const useUpdateUser = () => {
       statusMessage?: string;
     }) => userApi.updateUser(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myInfo });
     },
     onError: (error) => {
       console.error("사용자 수정 실패:", error);

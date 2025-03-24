@@ -3,13 +3,14 @@ import Messages from "./categories/Messages";
 
 interface CategoryProps {
   category: string;
+  onChatSelect: (chatId: string | null) => void; // 채팅 선택 콜백 추가
 }
 
-export default function Category({ category }: CategoryProps) {
+export default function Category({ category, onChatSelect }: CategoryProps) {
   const renderContent = () => {
     switch (category) {
       case "messages":
-        return <Messages />;
+        return <Messages onChatSelect={onChatSelect} />;
       case "friends":
         return <FriendsList />;
       case "add-friend":
