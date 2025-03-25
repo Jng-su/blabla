@@ -36,7 +36,6 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
 
   useEffect(() => {
     if (chatsData) {
-      console.log("Chats from useGetChats:", chatsData);
       setChats(chatsData);
     }
   }, [chatsData]);
@@ -87,11 +86,12 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
               className="p-2 border-b cursor-pointer hover:bg-gray-100"
               onClick={() => handleChatSelect(chat.chatId)}
             >
-              <img
-                src={chat.image || "https://via.placeholder.com/40"}
-                alt={chat.name || "User"}
-                className="w-10 h-10 rounded-full mr-3 object-cover"
-              />
+              {chat.image && (
+                <img
+                  src={chat.image}
+                  className="w-12 h-12 mr-3 object-cover rounded-full"
+                />
+              )}
               <p>{chat.name || "Unnamed Chat"}</p>
             </div>
           ))

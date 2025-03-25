@@ -40,12 +40,9 @@ export class ChatService {
       where: { participants: Like(`%${userId}%`) },
       relations: ['messages'],
     });
-
-    // 메시지가 있는 채팅만 필터링
     const activeChats = chats.filter(
       (chat) => chat.messages && chat.messages.length > 0,
     );
-
     return Promise.all(
       activeChats.map(async (chat) => {
         let chatName = chat.name;

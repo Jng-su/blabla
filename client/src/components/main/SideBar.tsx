@@ -163,11 +163,13 @@ export default function Sidebar({
         <Button
           icon={
             <div className="w-6 h-6 rounded-full overflow-hidden">
-              <img
-                src={currentUser?.profile_image || ""}
-                alt="프로필 이미지"
-                className="w-full h-full object-cover"
-              />
+              {currentUser?.profile_image && (
+                <img
+                  src={currentUser?.profile_image}
+                  alt="프로필 이미지"
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
           }
           category="settings"

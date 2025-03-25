@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, FormEvent } from "react";
 import { authApi } from "../../api/auth";
 import { messageApi } from "../../api/message";
 import socket from "../../api/config/socket";
 
 interface Message {
+  id: string;
   chatId: string;
   fromUserId: string;
   toUserId: string;
@@ -19,8 +20,8 @@ export default function ChatArea({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // 현재 사용자 정보 가져오기
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -33,7 +34,6 @@ export default function ChatArea({
     fetchUserInfo();
   }, []);
 
-  // 선택된 chatId로 메시지 조회
   useEffect(() => {
     if (selectedChatId) {
       const fetchMessages = async () => {
@@ -51,7 +51,6 @@ export default function ChatArea({
     }
   }, [selectedChatId]);
 
-  // WebSocket 실시간 메시지 수신
   useEffect(() => {
     if (selectedChatId) {
       socket.on("privateMessage", (data: Message) => {
@@ -69,7 +68,13 @@ export default function ChatArea({
     }
   }, [selectedChatId]);
 
-  // 메시지 전송
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedChatId && currentUserId) {
       const participants = selectedChatId.split("personal-")[1].split("-");
@@ -86,14 +91,23 @@ export default function ChatArea({
     }
   };
 
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSendMessage();
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 p-4 overflow-y-auto">
+      {/* 채팅 메시지 영역 */}
+      <div
+        ref={chatContainerRef}
+        className="flex-1 p-4 overflow-y-auto bg-gray-50"
+      >
         {selectedChatId ? (
           messages.length > 0 ? (
             messages.map((msg) => (
               <div
-                key={msg.timestamp}
+                key={msg.id}
                 className={`mb-2 flex ${
                   msg.fromUserId === currentUserId
                     ? "justify-end"
@@ -103,8 +117,8 @@ export default function ChatArea({
                 <div
                   className={`max-w-xs p-2 rounded-lg ${
                     msg.fromUserId === currentUserId
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-800"
+                      ? "bg-primary text-white"
+                      : "bg-gray-200"
                   }`}
                 >
                   <p>
@@ -121,31 +135,32 @@ export default function ChatArea({
               </div>
             ))
           ) : (
-            <p className="text-gray-500">
+            <p className="text-gray-500 text-center">
               아직 메시지가 없습니다. 대화를 시작해보세요!
             </p>
           )
         ) : (
-          <p className="text-gray-500">채팅을 선택해주세요.</p>
+          <p className="text-gray-500 text-center">채팅을 선택해주세요.</p>
         )}
       </div>
+
+      {/* 메시지 입력창 */}
       {selectedChatId && (
-        <div className="p-4 border-t flex items-center">
+        <form
+          onSubmit={handleFormSubmit}
+          className="w-full border-t bg-white flex items-center p-4"
+        >
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="메시지를 입력하세요..."
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
-          <button
-            onClick={handleSendMessage}
-            className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
-          >
+          <button type="submit" className="btn-primary ml-4 px-4 py-2">
             전송
           </button>
-        </div>
+        </form>
       )}
     </div>
   );

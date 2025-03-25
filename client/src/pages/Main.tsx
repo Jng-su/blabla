@@ -21,7 +21,6 @@ export default function Main() {
     if (!socket.connected) {
       socket.auth = { token };
       socket.connect();
-      console.log("📩 WebSocket: Connected");
     }
   }, [isAuthenticated]);
 
@@ -36,12 +35,15 @@ export default function Main() {
   };
 
   return (
-    <div className="w-3/4 h-[85vh] flex flex-col bg-white rounded-lg shadow-lg mx-auto">
-      <div className="flex gap-2 py-4 border-b border-gray-200 p-4">
+    <div className="w-3/4 h-[85vh] flex flex-col bg-white rounded-lg shadow-lg mx-auto overflow-hidden">
+      {/* 헤더 (고정 높이 설정) */}
+      <div className="flex gap-2 py-4 border-b border-gray-200 px-4 h-16 flex-shrink-0">
         <MessageSquareMore size={30} className="text-primary" />
         <p className="text-xl font-bold">blabla</p>
       </div>
-      <div className="flex w-full h-full">
+
+      {/* 메인 콘텐츠 영역 (남은 공간을 모두 차지) */}
+      <div className="flex w-full flex-1 overflow-hidden">
         <SideBar
           onCategoryChange={setSelectedCategory}
           onSignOut={handleSignOut}
@@ -54,7 +56,7 @@ export default function Main() {
               onChatSelect={setSelectedChatId}
             />
           </div>
-          <div className="w-3/4">
+          <div className="w-3/4 h-full overflow-hidden">
             <ChatArea selectedChatId={selectedChatId} />
           </div>
         </div>
