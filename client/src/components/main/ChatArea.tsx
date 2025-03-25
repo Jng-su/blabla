@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, FormEvent } from "react";
-import { authApi } from "../../api/auth";
+import { userApi } from "../../api/user";
 import { messageApi } from "../../api/message";
 import socket from "../../api/config/socket";
+import { useGetChats } from "../../query/queries/chat";
 
 interface Message {
   id: string;
@@ -12,6 +13,24 @@ interface Message {
   timestamp: string;
 }
 
+interface Chat {
+  chatId: string;
+  chatType: "personal" | "group";
+  participants: string[]; // [currentUserId, toUserId] 형태
+  name?: string;
+  image?: string;
+  lastMessageContent?: string;
+  lastMessageTimestamp?: string;
+  lastMessageSenderId?: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  profile_image?: string;
+  statusMessage?: string;
+}
+
 export default function ChatArea({
   selectedChatId,
 }: {
@@ -20,12 +39,14 @@ export default function ChatArea({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [opponentInfo, setOpponentInfo] = useState<User | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { data: chatsData } = useGetChats(); // 채팅 목록 가져오기
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const userInfo = await authApi.getMyInfo();
+        const userInfo = await userApi.getMe();
         setCurrentUserId(userInfo.id);
       } catch (error) {
         console.error("Failed to fetch user info:", error);
@@ -35,21 +56,43 @@ export default function ChatArea({
   }, []);
 
   useEffect(() => {
-    if (selectedChatId) {
-      const fetchMessages = async () => {
+    if (selectedChatId && currentUserId && chatsData) {
+      const fetchMessagesAndOpponentInfo = async () => {
         try {
+          // 메시지 가져오기
           const fetchedMessages = await messageApi.getMessagesByChatId(
             selectedChatId
           );
           setMessages(fetchedMessages);
+          const selectedChat: Chat | undefined = chatsData.find(
+            (chat: Chat) => chat.chatId === selectedChatId
+          );
+          if (selectedChat) {
+            const toUserId = selectedChat.participants.find(
+              (id) => id !== currentUserId
+            );
+            if (toUserId) {
+              const opponent = await userApi.getUserByUserId(toUserId);
+              console.log(opponent);
+              setOpponentInfo({
+                id: opponent.id,
+                name: opponent.name || toUserId,
+                profile_image: opponent.profile_image,
+                statusMessage: opponent.statusMessage,
+              });
+            }
+          }
         } catch (error) {
-          console.error("Failed to fetch messages:", error);
+          console.error("Failed to fetch data:", error);
           setMessages([]);
+          setOpponentInfo(null);
         }
       };
-      fetchMessages();
+      fetchMessagesAndOpponentInfo();
+    } else {
+      setOpponentInfo(null);
     }
-  }, [selectedChatId]);
+  }, [selectedChatId, currentUserId, chatsData]);
 
   useEffect(() => {
     if (selectedChatId) {
@@ -76,17 +119,23 @@ export default function ChatArea({
   }, [messages]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && selectedChatId && currentUserId) {
-      const participants = selectedChatId.split("personal-")[1].split("-");
-      const toUserId = participants.find((id) => id !== currentUserId);
-      if (toUserId) {
-        const messageData = {
-          chatId: selectedChatId,
-          toUserId,
-          content: newMessage,
-        };
-        socket.emit("privateMessage", messageData);
-        setNewMessage("");
+    if (newMessage.trim() && selectedChatId && currentUserId && chatsData) {
+      const selectedChat: Chat | undefined = chatsData.find(
+        (chat: Chat) => chat.chatId === selectedChatId
+      );
+      if (selectedChat) {
+        const toUserId = selectedChat.participants.find(
+          (id) => id !== currentUserId
+        );
+        if (toUserId) {
+          const messageData = {
+            chatId: selectedChatId,
+            toUserId,
+            content: newMessage,
+          };
+          socket.emit("privateMessage", messageData);
+          setNewMessage("");
+        }
       }
     }
   };
@@ -98,6 +147,32 @@ export default function ChatArea({
 
   return (
     <div className="h-full flex flex-col">
+      {/* 상대방 정보 표시 영역 */}
+      <div className="border-b border-gray-300 h-20 flex items-center pl-6">
+        {selectedChatId && opponentInfo ? (
+          <div className="flex items-center">
+            {opponentInfo.profile_image ? (
+              <img
+                src={opponentInfo.profile_image}
+                alt={opponentInfo.name}
+                className="w-12 h-12 mr-3 object-cover rounded-full border-2 border-gray-300"
+              />
+            ) : (
+              <div className="w-10 h-10 mr-3 bg-gray-300 rounded-full" />
+            )}
+            <div>
+              <h2 className="text-lg font-semibold">{opponentInfo.name}</h2>
+              {opponentInfo.statusMessage && (
+                <p className="text-sm text-gray-500">
+                  {opponentInfo.statusMessage}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <h2 className="text-lg font-semibold">채팅을 선택해주세요</h2>
+        )}
+      </div>
       {/* 채팅 메시지 영역 */}
       <div
         ref={chatContainerRef}
@@ -108,29 +183,20 @@ export default function ChatArea({
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`mb-2 flex ${
+                className={`mb-2 flex text-sm ${
                   msg.fromUserId === currentUserId
                     ? "justify-end"
                     : "justify-start"
                 }`}
               >
                 <div
-                  className={`max-w-xs p-2 rounded-lg ${
+                  className={`max-w-xs py-2 px-6 rounded-2xl font-semibold ${
                     msg.fromUserId === currentUserId
-                      ? "bg-primary text-white"
-                      : "bg-gray-200"
+                      ? "bg-[#a18df9] text-white"
+                      : "bg-[#dee4ed]"
                   }`}
                 >
-                  <p>
-                    <strong>
-                      {msg.fromUserId === currentUserId ? "나" : msg.fromUserId}
-                      :
-                    </strong>{" "}
-                    {msg.content}{" "}
-                    <span className="text-xs opacity-75">
-                      ({new Date(msg.timestamp).toLocaleTimeString()})
-                    </span>
-                  </p>
+                  <p>{msg.content}</p>
                 </div>
               </div>
             ))
@@ -143,7 +209,6 @@ export default function ChatArea({
           <p className="text-gray-500 text-center">채팅을 선택해주세요.</p>
         )}
       </div>
-
       {/* 메시지 입력창 */}
       {selectedChatId && (
         <form

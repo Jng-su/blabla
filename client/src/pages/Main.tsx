@@ -50,7 +50,7 @@ export default function Main() {
           activeCategory={selectedCategory}
         />
         <div className="flex w-full">
-          <div className="w-1/4">
+          <div className="w-1/4 bg-gray-100 h-full overflow-y-auto">
             <Category
               category={selectedCategory}
               onChatSelect={setSelectedChatId}

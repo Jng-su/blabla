@@ -29,14 +29,27 @@ export class MessageService {
     if (!chat) {
       throw new Error(`Chat with ID ${chatId} not found`);
     }
+
+    const timestamp = new Date().toISOString();
     const message = this.messageRepository.create({
       chat,
       fromUserId,
       toUserId,
       content,
-      timestamp: new Date().toISOString(),
+      timestamp,
     });
-    return this.messageRepository.save(message);
+
+    // 메시지 저장
+    const savedMessage = await this.messageRepository.save(message);
+
+    // 채팅의 lastMessage 필드 업데이트
+    await this.chatService.updateLastMessage(chatId, {
+      content,
+      timestamp,
+      senderId: fromUserId,
+    });
+
+    return savedMessage;
   }
 
   async getMessagesByChatId(chatId: string): Promise<Message[]> {
