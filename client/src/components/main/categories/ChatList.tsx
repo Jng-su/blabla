@@ -3,6 +3,8 @@ import CreateChatModal from "../../modals/CreateChatModal";
 import { useGetChats } from "../../../query/queries/chat";
 import { authApi } from "../../../api/auth";
 import socket from "../../../api/config/socket";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
 
 interface Chat {
   chatId: string;
@@ -10,6 +12,9 @@ interface Chat {
   participants: string[];
   name?: string;
   image?: string;
+  lastMessageContent?: string;
+  lastMessageTimestamp?: string;
+  lastMessageSenderId?: string;
 }
 
 interface MessagesProps {
@@ -19,8 +24,9 @@ interface MessagesProps {
 export default function ChatList({ onChatSelect }: MessagesProps) {
   const [isCreateChatModalOpen, setIsCreateChatModalOpen] = useState(false);
   const { data: chatsData } = useGetChats();
-  const [chats, setChats] = useState<Chat[]>(chatsData || []);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -36,21 +42,58 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
 
   useEffect(() => {
     if (chatsData) {
-      setChats(chatsData);
+      setChats(
+        chatsData.map((chat: Chat) => ({
+          ...chat,
+          lastMessage: chat.lastMessageContent
+            ? {
+                content: chat.lastMessageContent,
+                timestamp: chat.lastMessageTimestamp!,
+              }
+            : undefined,
+        }))
+      );
     }
   }, [chatsData]);
 
   useEffect(() => {
     socket.on("chatCreated", (newChat: Chat) => {
-      console.log("Chat created event:", newChat);
       setChats((prev) => {
         if (prev.some((chat) => chat.chatId === newChat.chatId)) return prev;
         return [...prev, newChat];
       });
     });
 
+    socket.on(
+      "message",
+      (message: {
+        chatId: string;
+        content: string;
+        timestamp: string;
+        senderId: string;
+      }) => {
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.chatId === message.chatId
+              ? {
+                  ...chat,
+                  lastMessageContent: message.content,
+                  lastMessageTimestamp: message.timestamp,
+                  lastMessageSenderId: message.senderId,
+                  lastMessage: {
+                    content: message.content,
+                    timestamp: message.timestamp,
+                  },
+                }
+              : chat
+          )
+        );
+      }
+    );
+
     return () => {
       socket.off("chatCreated");
+      socket.off("message");
     };
   }, []);
 
@@ -58,15 +101,19 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
     if (!currentUserId) return;
     const participants = [currentUserId, friendId].sort();
     const chatId = `personal-${participants.join("-")}`;
-
-    console.log("Creating chat with:", { chatId, participants });
     socket.emit("createChat", { chatId, chatType: "personal", participants });
     onChatSelect(chatId);
     setIsCreateChatModalOpen(false);
   };
 
   const handleChatSelect = (chatId: string) => {
+    setSelectedChatId(chatId);
     onChatSelect(chatId);
+  };
+
+  const truncateMessage = (content: string) => {
+    if (content.length <= 15) return content;
+    return content.slice(0, 15) + " ...";
   };
 
   return (
@@ -77,26 +124,64 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
       >
         + 채팅 생성
       </button>
-      <div className="p-6">
-        <h2 className="text-lg font-semibold mb-4">채팅 목록</h2>
+      <h2 className="text-lg font-bold my-4">채팅 목록</h2>
+      <div>
         {chats.length > 0 ? (
           chats.map((chat) => (
             <div
               key={chat.chatId}
-              className="p-2 border-b cursor-pointer hover:bg-gray-100"
+              className={`cursor-pointer p-4 mb-3 rounded-lg shadow-lg ${
+                selectedChatId === chat.chatId
+                  ? "bg-[#575076] text-white"
+                  : "bg-white hover:bg-gray-100"
+              }`}
               onClick={() => handleChatSelect(chat.chatId)}
             >
-              {chat.image && (
-                <img
-                  src={chat.image}
-                  className="w-12 h-12 mr-3 object-cover rounded-full"
-                />
-              )}
-              <p>{chat.name || "Unnamed Chat"}</p>
+              <div className="flex items-center">
+                {chat.image && (
+                  <img
+                    src={chat.image}
+                    className="w-11 h-11 mr-3 object-cover rounded-full border-2 border-white"
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <p className="font-bold text-base">{chat.name}</p>
+                    {chat.lastMessageTimestamp && (
+                      <span
+                        className={`text-xs ${
+                          selectedChatId === chat.chatId
+                            ? "text-gray-300"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {formatDistanceToNow(
+                          new Date(chat.lastMessageTimestamp),
+                          {
+                            addSuffix: true,
+                            locale: ko,
+                          }
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {chat.lastMessageContent && (
+                    <p
+                      className={`text-xs ${
+                        selectedChatId === chat.chatId
+                          ? "text-gray-300"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      {truncateMessage(chat.lastMessageContent)}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           ))
         ) : (
-          <p>채팅을 생성해주세요. 👋</p>
+          <p className="p-2 text-gray-600">채팅을 생성해주세요. 👋</p>
         )}
       </div>
       <CreateChatModal

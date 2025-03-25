@@ -40,13 +40,16 @@ export class ChatService {
       where: { participants: Like(`%${userId}%`) },
       relations: ['messages'],
     });
+
     const activeChats = chats.filter(
       (chat) => chat.messages && chat.messages.length > 0,
     );
+
     return Promise.all(
       activeChats.map(async (chat) => {
         let chatName = chat.name;
         let chatImage = chat.image;
+
         if (chat.chatType === 'personal') {
           const opponentId = chat.participants.find((id) => id !== userId);
           if (opponentId) {
@@ -55,10 +58,14 @@ export class ChatService {
             chatImage = opponent.profile_image;
           }
         }
+
         return {
           ...chat,
           name: chatName || 'Unnamed Chat',
           image: chatImage || null,
+          lastMessageContent: chat.lastMessageContent,
+          lastMessageTimestamp: chat.lastMessageTimestamp,
+          lastMessageSenderId: chat.lastMessageSenderId,
         };
       }),
     );
@@ -68,6 +75,17 @@ export class ChatService {
     return this.chatRepository.findOne({
       where: { chatId },
       relations: ['messages'],
+    });
+  }
+
+  async updateLastMessage(
+    chatId: string,
+    lastMessage: { content: string; timestamp: string; senderId: string },
+  ): Promise<void> {
+    await this.chatRepository.update(chatId, {
+      lastMessageContent: lastMessage.content,
+      lastMessageTimestamp: lastMessage.timestamp,
+      lastMessageSenderId: lastMessage.senderId,
     });
   }
 }

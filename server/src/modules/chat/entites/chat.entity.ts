@@ -20,4 +20,13 @@ export class Chat {
 
   @OneToMany(() => Message, (message) => message.chat)
   messages: Message[];
+
+  @Column({ nullable: true })
+  lastMessageContent: string;
+
+  @Column({ nullable: true })
+  lastMessageTimestamp: string;
+
+  @Column({ nullable: true })
+  lastMessageSenderId: string;
 }

@@ -198,7 +198,7 @@ export default function Sidebar({
             <input
               type="email"
               placeholder="이메일을 입력하세요"
-              className="w-full p-2 border border-gray-300 rounded-lg"
+              className="w-full p-2 input-style"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isInvitePending}
