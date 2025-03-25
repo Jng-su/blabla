@@ -1,22 +1,38 @@
 import { useState, useEffect } from "react";
 import CreateChatModal from "../../modals/CreateChatModal";
 import { useGetChats } from "../../../query/queries/chat";
+import { authApi } from "../../../api/auth";
 import socket from "../../../api/config/socket";
 
 interface Chat {
   chatId: string;
-  chatType: "personal";
+  chatType: "personal" | "group";
   participants: string[];
+  name?: string;
+  image?: string;
 }
 
 interface MessagesProps {
   onChatSelect: (chatId: string | null) => void;
 }
 
-export default function Messages({ onChatSelect }: MessagesProps) {
+export default function ChatList({ onChatSelect }: MessagesProps) {
   const [isCreateChatModalOpen, setIsCreateChatModalOpen] = useState(false);
   const { data: chatsData } = useGetChats();
   const [chats, setChats] = useState<Chat[]>(chatsData || []);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await authApi.getMyInfo();
+        setCurrentUserId(userInfo.id);
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   useEffect(() => {
     if (chatsData) {
@@ -24,31 +40,30 @@ export default function Messages({ onChatSelect }: MessagesProps) {
     }
   }, [chatsData]);
 
-  const handleSelectFriend = (friendId: string) => {
-    socket.emit("createChat", {
-      toUserId: friendId,
-      chatType: "personal",
-    });
-  };
-
   useEffect(() => {
-    socket.on("chatCreated", (chat) => {
-      console.log("New chat created:", chat);
+    socket.on("chatCreated", (newChat: Chat) => {
+      console.log("Chat created event:", newChat);
       setChats((prev) => {
-        if (!prev.some((c) => c.chatId === chat.chatId)) {
-          return [...prev, chat];
-        }
-        return prev;
+        if (prev.some((chat) => chat.chatId === newChat.chatId)) return prev;
+        return [...prev, newChat];
       });
-      // 생성자가 새 채팅을 시작한 경우에만 선택
-      onChatSelect(chat.chatId); // 새 채팅방으로 이동
-      setIsCreateChatModalOpen(false); // 모달 닫기
     });
 
     return () => {
       socket.off("chatCreated");
     };
-  }, [onChatSelect]);
+  }, []);
+
+  const handleSelectFriend = (friendId: string) => {
+    if (!currentUserId) return;
+    const participants = [currentUserId, friendId].sort();
+    const chatId = `personal-${participants.join("-")}`;
+
+    console.log("Creating chat with:", { chatId, participants });
+    socket.emit("createChat", { chatId, chatType: "personal", participants });
+    onChatSelect(chatId);
+    setIsCreateChatModalOpen(false);
+  };
 
   const handleChatSelect = (chatId: string) => {
     onChatSelect(chatId);
@@ -71,7 +86,13 @@ export default function Messages({ onChatSelect }: MessagesProps) {
               className="p-2 border-b cursor-pointer hover:bg-gray-100"
               onClick={() => handleChatSelect(chat.chatId)}
             >
-              <p>참여자: {chat.participants.join(", ")}</p>
+              {chat.image && (
+                <img
+                  src={chat.image}
+                  className="w-12 h-12 mr-3 object-cover rounded-full"
+                />
+              )}
+              <p>{chat.name || "Unnamed Chat"}</p>
             </div>
           ))
         ) : (

@@ -14,7 +14,7 @@ export default function SignIn() {
     setError("");
     try {
       await signInMutation.mutateAsync({ email, password });
-      navigate("/chat");
+      navigate("/main");
     } catch (err) {
       setError(
         (err as any).response?.data?.message || "로그인에 실패했습니다."

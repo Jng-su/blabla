@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply font-[NanumSquare] m-0 p-0 bg-gray-50;
+    @apply font-[NanumSquare] m-0 p-0 bg-gray-200;
   }
 }
 

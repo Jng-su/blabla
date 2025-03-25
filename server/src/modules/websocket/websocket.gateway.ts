@@ -1,23 +1,21 @@
-import { UseGuards } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
-import { JwtAuthGuard } from '../auth/guard/jwt.guard';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Chat } from '../chat/entites/chat.entity';
-import { Message } from '../message/entites/message.entity';
+import { AuthSocket } from './interface/auth-socket.interface';
+import { WebSocketManagerService } from './services/websocket.manager.service';
+import { ChatHandler } from './handlers/chat.handler';
+import { MessageHandler } from './handlers/message.handler';
+import { CreateChatDto } from './dto/create-chat.dto';
+import { PrivateMessageDto } from './dto/private-message.dto';
 
-interface AuthSocket extends Socket {
-  user?: { id: string; email: string; name: string; role: string };
-}
-
+@Injectable()
 @WebSocketGateway(8001, {
   cors: {
     origin: (origin, callback) => {
@@ -32,97 +30,54 @@ export class WebsocketGateway
   @WebSocketServer()
   server: Server;
 
-  private clients = new Map<string, Socket>();
-
   constructor(
     private jwtService: JwtService,
-    @InjectRepository(Chat)
-    private chatRepository: Repository<Chat>,
-    @InjectRepository(Message)
-    private messageRepository: Repository<Message>,
+    private webSocketManager: WebSocketManagerService,
+    private chatHandler: ChatHandler,
+    private messageHandler: MessageHandler,
   ) {}
 
+  // 클라이언트 연결 시 호출
   async handleConnection(client: AuthSocket) {
     const token = client.handshake.auth.token;
     if (!token) {
       client.disconnect();
+      console.log(`🔴 WebSocket: Client disconnected: ${client.id} (no token)`);
       return;
     }
     try {
       const payload = await this.jwtService.verify(token);
       client.user = payload;
-      this.clients.set(payload.id, client);
+      this.webSocketManager.addClient(payload.id, client);
       console.log(
-        `🟢 WebSocket: Client connected: ${client.id}, User ${payload.email}`,
+        `🟢 WebSocket: Client connected: ${client.id}, User: ${payload.email}`,
       );
     } catch (error) {
       client.disconnect();
     }
   }
 
+  // 클라이언트 연결 해제 시 호출
   handleDisconnect(client: AuthSocket) {
     const userId = client.user?.id || client.id;
-    this.clients.delete(userId);
+    this.webSocketManager.removeClient(userId);
     console.log(
-      `🔴 WebSocket: Client disconnected: ${client.id}, User ${userId}`,
+      `🔴 WebSocket: Client disconnected: ${client.id}, User: ${userId}`,
     );
   }
 
+  // 클라이언트로부터 메시지 수신 시 호출
+  @SubscribeMessage('createChat')
+  async onCreateChat(client: AuthSocket, createChatDto: CreateChatDto) {
+    await this.chatHandler.handleCreateChat(client, createChatDto);
+  }
+
+  // 클라이언트로부터 메시지 수신 시 호출
   @SubscribeMessage('privateMessage')
-  @UseGuards(JwtAuthGuard)
-  async handlePrivateMessage(
+  async onPrivateMessage(
     client: AuthSocket,
-    payload: {
-      toUserId: string;
-      content: string;
-      chatName?: string;
-      chatImage?: string;
-    },
-  ): Promise<void> {
-    const senderId = client.user!.id;
-    const receiverSocket = this.clients.get(payload.toUserId);
-    const participants = [senderId, payload.toUserId].sort();
-    const chatId = `personal-${participants.join('-')}`;
-
-    // 채팅방 확인 및 생성
-    let chat = await this.chatRepository.findOne({ where: { chatId } });
-    if (!chat) {
-      chat = new Chat();
-      chat.chatId = chatId;
-      chat.chatType = 'personal';
-      chat.participants = participants;
-      chat.name = payload.chatName || `${senderId}-${payload.toUserId}`;
-      chat.image = payload.chatImage || null;
-      await this.chatRepository.save(chat);
-
-      participants.forEach((userId) => {
-        const userSocket = this.clients.get(userId);
-        if (userSocket) {
-          userSocket.emit('chatCreated', {
-            chatId,
-            chatType: 'personal',
-            participants,
-            name: chat.name,
-            image: chat.image,
-          });
-        }
-      });
-    }
-
-    // 메시지 저장
-    const message = new Message();
-    message.chatId = chatId;
-    message.chat = chat; // 관계 설정
-    message.fromUserId = senderId;
-    message.toUserId = payload.toUserId;
-    message.content = payload.content;
-    message.timestamp = new Date().toISOString();
-    await this.messageRepository.save(message);
-
-    // 실시간 전송
-    if (receiverSocket) {
-      receiverSocket.emit('privateMessage', message);
-    }
-    client.emit('privateMessage', message);
+    privateMessageDto: PrivateMessageDto,
+  ) {
+    await this.messageHandler.handlePrivateMessage(client, privateMessageDto);
   }
 }
