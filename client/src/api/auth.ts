@@ -1,9 +1,10 @@
+import { SignInRequest, SignInResponse, SignUpRequest } from "../types/auth";
 import api from "./config/axios";
 import Cookies from "js-cookie";
 
 export const authApi = {
   // 로그인
-  signIn: async (data: { email: string; password: string }) => {
+  signIn: async (data: SignInRequest): Promise<SignInResponse> => {
     const response = await api.post("/auth/signin", data);
     Cookies.set("access_token", response.data.access_token);
     Cookies.set("refresh_token", response.data.refresh_token);
@@ -11,7 +12,7 @@ export const authApi = {
   },
 
   // 회원가입
-  signUp: async (data: { name: string; email: string; password: string }) => {
+  signUp: async (data: SignUpRequest) => {
     const response = await api.post("/auth/signup", data);
     return response.data;
   },

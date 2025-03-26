@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { useGetFriends } from "../../query/queries/user";
-import { Friend } from "../../interfaces/components/Friend.interface";
-
-interface CreateChatModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelectFriend: (selectedFriendId: string) => void;
-}
+import { Friend } from "../../types/friend";
+import { CreateChatModalProps } from "../../types/modal-props";
 
 export default function CreateChatModal({
   isOpen,
@@ -32,7 +27,7 @@ export default function CreateChatModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
         <h2 className="text-lg font-semibold mb-4">개인 채팅 시작</h2>
         <div className="max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">

@@ -1,103 +1,43 @@
 import { useEffect, useState, useRef, FormEvent } from "react";
-import { userApi } from "../../api/user";
 import { messageApi } from "../../api/message";
 import socket from "../../api/config/socket";
-import { useGetChats } from "../../query/queries/chat";
-
-interface Message {
-  id: string;
-  chatId: string;
-  fromUserId: string;
-  toUserId: string;
-  content: string;
-  timestamp: string;
-}
-
-interface Chat {
-  chatId: string;
-  chatType: "personal" | "group";
-  participants: string[]; // [currentUserId, toUserId] 형태
-  name?: string;
-  image?: string;
-  lastMessageContent?: string;
-  lastMessageTimestamp?: string;
-  lastMessageSenderId?: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  profile_image?: string;
-  statusMessage?: string;
-}
+import { ChatAreaProps } from "../../types/main-props";
+import { Message } from "../../types/message";
+import GetUserModal from "../modals/GetUserModal";
 
 export default function ChatArea({
-  selectedChatId,
-}: {
-  selectedChatId: string | null;
-}) {
+  selectedChat,
+  currentUserId,
+}: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [opponentInfo, setOpponentInfo] = useState<User | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { data: chatsData } = useGetChats(); // 채팅 목록 가져오기
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userInfo = await userApi.getMe();
-        setCurrentUserId(userInfo.id);
-      } catch (error) {
-        console.error("Failed to fetch user info:", error);
-      }
-    };
-    fetchUserInfo();
-  }, []);
-
-  useEffect(() => {
-    if (selectedChatId && currentUserId && chatsData) {
-      const fetchMessagesAndOpponentInfo = async () => {
+    if (selectedChat?.chatId) {
+      const fetchMessages = async () => {
         try {
-          // 메시지 가져오기
           const fetchedMessages = await messageApi.getMessagesByChatId(
-            selectedChatId
+            selectedChat.chatId
           );
           setMessages(fetchedMessages);
-          const selectedChat: Chat | undefined = chatsData.find(
-            (chat: Chat) => chat.chatId === selectedChatId
-          );
-          if (selectedChat) {
-            const toUserId = selectedChat.participants.find(
-              (id) => id !== currentUserId
-            );
-            if (toUserId) {
-              const opponent = await userApi.getUserByUserId(toUserId);
-              console.log(opponent);
-              setOpponentInfo({
-                id: opponent.id,
-                name: opponent.name || toUserId,
-                profile_image: opponent.profile_image,
-                statusMessage: opponent.statusMessage,
-              });
-            }
-          }
         } catch (error) {
-          console.error("Failed to fetch data:", error);
+          console.error("Failed to fetch messages:", error);
           setMessages([]);
-          setOpponentInfo(null);
         }
       };
-      fetchMessagesAndOpponentInfo();
+      fetchMessages();
     } else {
-      setOpponentInfo(null);
+      setMessages([]);
     }
-  }, [selectedChatId, currentUserId, chatsData]);
+  }, [selectedChat]);
 
   useEffect(() => {
-    if (selectedChatId) {
+    if (selectedChat?.chatId) {
       socket.on("privateMessage", (data: Message) => {
-        if (data.chatId === selectedChatId) {
+        if (data.chatId === selectedChat.chatId) {
           setMessages((prev) => [
             ...prev,
             { ...data, timestamp: data.timestamp },
@@ -109,7 +49,7 @@ export default function ChatArea({
         socket.off("privateMessage");
       };
     }
-  }, [selectedChatId]);
+  }, [selectedChat]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -119,23 +59,23 @@ export default function ChatArea({
   }, [messages]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && selectedChatId && currentUserId && chatsData) {
-      const selectedChat: Chat | undefined = chatsData.find(
-        (chat: Chat) => chat.chatId === selectedChatId
+    if (
+      newMessage.trim() &&
+      selectedChat?.chatId &&
+      currentUserId &&
+      selectedChat.participants
+    ) {
+      const toUserId = selectedChat.participants.find(
+        (id) => id !== currentUserId
       );
-      if (selectedChat) {
-        const toUserId = selectedChat.participants.find(
-          (id) => id !== currentUserId
-        );
-        if (toUserId) {
-          const messageData = {
-            chatId: selectedChatId,
-            toUserId,
-            content: newMessage,
-          };
-          socket.emit("privateMessage", messageData);
-          setNewMessage("");
-        }
+      if (toUserId) {
+        const messageData = {
+          chatId: selectedChat.chatId,
+          toUserId,
+          content: newMessage,
+        };
+        socket.emit("privateMessage", messageData);
+        setNewMessage("");
       }
     }
   };
@@ -144,73 +84,105 @@ export default function ChatArea({
     e.preventDefault();
     handleSendMessage();
   };
+  const openModal = (friendId: string) => {
+    setSelectedFriendId(friendId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedFriendId(null);
+  };
 
   return (
     <div className="h-full flex flex-col">
-      {/* 상대방 정보 표시 영역 */}
-      <div className="border-b border-gray-300 h-20 flex items-center pl-6">
-        {selectedChatId && opponentInfo ? (
-          <div className="flex items-center">
-            {opponentInfo.profile_image ? (
+      {/* 헤더 */}
+      <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-violet-50">
+        {selectedChat ? (
+          <>
+            {selectedChat.image && (
               <img
-                src={opponentInfo.profile_image}
-                alt={opponentInfo.name}
-                className="w-12 h-12 mr-3 object-cover rounded-full border-2 border-gray-300"
+                src={selectedChat.image}
+                alt="프로필"
+                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
               />
-            ) : (
-              <div className="w-10 h-10 mr-3 bg-gray-300 rounded-full" />
             )}
-            <div>
-              <h2 className="text-lg font-semibold">{opponentInfo.name}</h2>
-              {opponentInfo.statusMessage && (
-                <p className="text-sm text-gray-500">
-                  {opponentInfo.statusMessage}
-                </p>
-              )}
-            </div>
-          </div>
+            <h2 className="flex text-xl font-extrabold text-gray-800 gap-2">
+              <p className="text-primary">{selectedChat.name || "이름 없음"}</p>
+              님과의 채팅
+            </h2>
+          </>
         ) : (
-          <h2 className="text-lg font-semibold">채팅을 선택해주세요</h2>
+          <p className="font-extrabold text-gray-800">채팅을 선택해주세요.</p>
         )}
       </div>
-      {/* 채팅 메시지 영역 */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 p-4 overflow-y-auto bg-gray-50"
-      >
-        {selectedChatId ? (
-          messages.length > 0 ? (
+
+      {/* 메시지 영역 */}
+      {selectedChat && (
+        <div
+          ref={chatContainerRef}
+          className="flex-1 p-4 overflow-y-auto bg-gray-50"
+        >
+          {messages.length > 0 ? (
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`mb-2 flex text-sm ${
+                className={`mb-4 flex ${
                   msg.fromUserId === currentUserId
                     ? "justify-end"
                     : "justify-start"
                 }`}
               >
-                <div
-                  className={`max-w-xs py-2 px-6 rounded-2xl font-semibold ${
-                    msg.fromUserId === currentUserId
-                      ? "bg-[#a18df9] text-white"
-                      : "bg-[#dee4ed]"
-                  }`}
-                >
-                  <p>{msg.content}</p>
-                </div>
+                {msg.fromUserId === currentUserId ? (
+                  <div>
+                    <div className="p-4 rounded-2xl bg-violet-400 text-white">
+                      <p className="font-bold">{msg.content}</p>
+                      <span className="text-xs opacity-45">
+                        ({new Date(msg.timestamp).toLocaleTimeString()})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex">
+                    {selectedChat.image && (
+                      <img
+                        src={selectedChat.image}
+                        alt="프로필"
+                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 cursor-pointer"
+                        onClick={() =>
+                          openModal(
+                            selectedChat.participants.find(
+                              (id) => id !== currentUserId
+                            ) || ""
+                          )
+                        }
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 pl-2">
+                        {selectedChat.name || msg.fromUserId}
+                      </p>
+                      <div className="p-4 rounded-2xl bg-gray-200">
+                        <p className="font-bold">{msg.content}</p>
+                        <span className="text-xs opacity-45">
+                          ({new Date(msg.timestamp).toLocaleTimeString()})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           ) : (
             <p className="text-gray-500 text-center">
               아직 메시지가 없습니다. 대화를 시작해보세요!
             </p>
-          )
-        ) : (
-          <p className="text-gray-500 text-center">채팅을 선택해주세요.</p>
-        )}
-      </div>
-      {/* 메시지 입력창 */}
-      {selectedChatId && (
+          )}
+        </div>
+      )}
+
+      {/* 입력창 */}
+      {selectedChat && (
         <form
           onSubmit={handleFormSubmit}
           className="w-full border-t bg-white flex items-center p-4"
@@ -227,6 +199,13 @@ export default function ChatArea({
           </button>
         </form>
       )}
+
+      {/* 모달 */}
+      <GetUserModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        selectedFriendId={selectedFriendId || ""}
+      />
     </div>
   );
 }

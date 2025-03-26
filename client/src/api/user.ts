@@ -1,3 +1,4 @@
+import { UpdateUserData } from "../types/user";
 import api from "./config/axios";
 
 export const userApi = {
@@ -20,11 +21,7 @@ export const userApi = {
   },
 
   // 본인 정보 수정 (token)
-  updateUser: async (updateUserData: {
-    name?: string;
-    profile_image?: string;
-    statusMessage?: string;
-  }) => {
+  updateUser: async (updateUserData: UpdateUserData) => {
     const response = await api.patch("/user", updateUserData, {
       headers: {
         "Content-Type": "multipart/form-data",
