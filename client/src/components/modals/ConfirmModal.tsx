@@ -1,14 +1,4 @@
-import { JSX } from "react";
-
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  content?: JSX.Element | string;
-  confirmText: string;
-  onConfirm: () => void;
-  cancelText?: string;
-}
+import { ConfirmModalProps } from "../../types/modal-props";
 
 export default function ConfirmModal({
   isOpen,
@@ -18,7 +8,7 @@ export default function ConfirmModal({
   confirmText,
   onConfirm,
   cancelText = "취소",
-}: ModalProps) {
+}: ConfirmModalProps) {
   if (!isOpen) return null;
 
   return (

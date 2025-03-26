@@ -1,23 +1,5 @@
-import { ChangeEvent } from "react";
 import { Pencil } from "lucide-react";
-
-interface UpdateUserInfoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userData: {
-    name: string;
-    profile_image: string;
-    statusMessage: string;
-  };
-  onConfirm: () => void;
-  onUserDataChange: (data: {
-    name: string;
-    profile_image: string;
-    statusMessage: string;
-  }) => void;
-  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  isPending: boolean;
-}
+import { UpdateUserInfoModalProps } from "../../types/modal-props";
 
 export function UpdateUserInfoModal({
   isOpen,
@@ -31,7 +13,7 @@ export function UpdateUserInfoModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
       <div className="bg-white p-6 rounded-lg w-1/5">
         <h2 className="text-xl font-bold mb-4">내 정보 수정</h2>
         <div className="flex flex-col">

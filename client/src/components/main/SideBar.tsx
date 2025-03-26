@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, JSX } from "react";
+import { useState, ChangeEvent } from "react";
 import {
   LogOut,
   MessageSquareMore,
@@ -9,34 +9,8 @@ import ConfirmModal from "../modals/ConfirmModal";
 import { useInviteFriend, useUpdateUser } from "../../query/mutation/user";
 import { useGetMe } from "../../query/queries/user";
 import { UpdateUserInfoModal } from "../modals/UpdateUserInfoModal";
-
-const buttonStyle =
-  "hover:text-white hover:bg-primaryHover p-2 rounded-lg transition-all";
-
-interface ButtonProps {
-  icon: JSX.Element;
-  category: string;
-  activeCategory: string;
-  onClick: () => void;
-}
-
-const Button = ({ icon, category, activeCategory, onClick }: ButtonProps) => {
-  const isActive = activeCategory === category;
-  return (
-    <button
-      className={`${buttonStyle} ${isActive ? "text-white bg-primary" : ""}`}
-      onClick={onClick}
-    >
-      {icon}
-    </button>
-  );
-};
-
-interface SidebarProps {
-  onCategoryChange: (category: string) => void;
-  onSignOut: () => void;
-  activeCategory: string;
-}
+import { SidebarProps } from "../../types/main-props";
+import SidebarButton from "../common/SidebarButton";
 
 export default function Sidebar({
   onCategoryChange,
@@ -140,27 +114,27 @@ export default function Sidebar({
   return (
     <div className="flex flex-col justify-between p-4 border-r border-gray-200">
       <div className="flex flex-col gap-4">
-        <Button
+        <SidebarButton
           icon={<MessageSquareMore size={24} />}
-          category="messages"
+          category="chats"
           activeCategory={activeCategory}
-          onClick={() => onCategoryChange("messages")}
+          onClick={() => onCategoryChange("chats")}
         />
-        <Button
+        <SidebarButton
           icon={<UsersRound size={24} />}
           category="friends"
           activeCategory={activeCategory}
           onClick={() => onCategoryChange("friends")}
         />
         <button
-          className={buttonStyle}
+          className="sidebar-button"
           onClick={() => setIsAddFriendModalOpen(true)}
         >
           <UserRoundPlus size={24} />
         </button>
       </div>
       <div className="flex flex-col gap-4">
-        <Button
+        <SidebarButton
           icon={
             <div className="w-6 h-6 rounded-full overflow-hidden">
               {currentUser?.profile_image && (
@@ -177,7 +151,7 @@ export default function Sidebar({
           onClick={handleSettingsOpen}
         />
         <button
-          className={buttonStyle}
+          className="sidebar-button"
           onClick={() => setIsLogoutModalOpen(true)}
         >
           <LogOut size={24} />

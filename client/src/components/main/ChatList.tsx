@@ -1,44 +1,23 @@
-import { useState, useEffect } from "react";
-import CreateChatModal from "../../modals/CreateChatModal";
-import { useGetChats } from "../../../query/queries/chat";
-import { authApi } from "../../../api/auth";
-import socket from "../../../api/config/socket";
+import { useEffect, useState } from "react";
+import CreateChatModal from "../modals/CreateChatModal";
+import { useGetChats } from "../../query/queries/chat";
+import { useGetFriends } from "../../query/queries/user";
+import socket from "../../api/config/socket";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { ChatListProps } from "../../types/main-props";
+import { Chat } from "../../types/chat";
+import { Friend } from "../../types/friend";
 
-interface Chat {
-  chatId: string;
-  chatType: "personal" | "group";
-  participants: string[];
-  name?: string;
-  image?: string;
-  lastMessageContent?: string;
-  lastMessageTimestamp?: string;
-  lastMessageSenderId?: string;
-}
-
-interface MessagesProps {
-  onChatSelect: (chatId: string | null) => void;
-}
-
-export default function ChatList({ onChatSelect }: MessagesProps) {
+export default function ChatList({
+  onChatSelect,
+  currentUserId,
+  selectedChatId,
+}: ChatListProps) {
   const [isCreateChatModalOpen, setIsCreateChatModalOpen] = useState(false);
   const { data: chatsData } = useGetChats();
+  const { data: friends } = useGetFriends();
   const [chats, setChats] = useState<Chat[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userInfo = await authApi.getMyInfo();
-        setCurrentUserId(userInfo.id);
-      } catch (error) {
-        console.error("Failed to fetch user info:", error);
-      }
-    };
-    fetchUserInfo();
-  }, []);
 
   useEffect(() => {
     if (chatsData) {
@@ -98,17 +77,48 @@ export default function ChatList({ onChatSelect }: MessagesProps) {
   }, []);
 
   const handleSelectFriend = (friendId: string) => {
-    if (!currentUserId) return;
+    if (!currentUserId || !friends) return;
+
+    const selectedFriend: Friend | undefined = friends.find(
+      (friend: Friend) => friend.id === friendId
+    );
+    if (!selectedFriend) return;
+
     const participants = [currentUserId, friendId].sort();
     const chatId = `personal-${participants.join("-")}`;
-    socket.emit("createChat", { chatId, chatType: "personal", participants });
-    onChatSelect(chatId);
+    const existingChat = chats.find((chat) => chat.chatId === chatId);
+
+    if (existingChat) {
+      onChatSelect(existingChat);
+      setIsCreateChatModalOpen(false);
+      return;
+    }
+
+    // 친구 이름과 이미지 추가
+    const newChat: Chat = {
+      chatId,
+      chatType: "personal",
+      participants,
+      name: selectedFriend.name, // 친구 이름 설정
+      image: selectedFriend.profile_image || undefined, // 친구 이미지 설정
+    };
+
+    socket.emit("createChat", {
+      chatId,
+      chatType: "personal",
+      participants,
+      name: selectedFriend.name, // 서버에도 이름 전달 (선택적)
+      image: selectedFriend.profile_image, // 서버에도 이미지 전달 (선택적)
+    });
+    onChatSelect(newChat);
     setIsCreateChatModalOpen(false);
   };
 
   const handleChatSelect = (chatId: string) => {
-    setSelectedChatId(chatId);
-    onChatSelect(chatId);
+    const selectedChat = chats.find((chat) => chat.chatId === chatId);
+    if (selectedChat) {
+      onChatSelect(selectedChat);
+    }
   };
 
   const truncateMessage = (content: string) => {

@@ -1,16 +1,23 @@
-import FriendsList from "./categories/FriendList";
-import ChatList from "./categories/ChatList";
+import FriendsList from "./FriendList";
+import ChatList from "./ChatList";
+import { CategoryProps } from "../../types/main-props";
 
-interface CategoryProps {
-  category: string;
-  onChatSelect: (chatId: string | null) => void;
-}
-
-export default function Category({ category, onChatSelect }: CategoryProps) {
+export default function Category({
+  category,
+  onChatSelect,
+  currentUserId,
+  selectedChatId,
+}: CategoryProps) {
   const renderContent = () => {
     switch (category) {
-      case "messages":
-        return <ChatList onChatSelect={onChatSelect} />;
+      case "chats":
+        return (
+          <ChatList
+            onChatSelect={onChatSelect}
+            currentUserId={currentUserId}
+            selectedChatId={selectedChatId}
+          />
+        );
       case "friends":
         return <FriendsList />;
     }
