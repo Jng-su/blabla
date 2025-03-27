@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '../user/entites/user.entity';
 import { SigninDto } from './dto/signin.dto';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly userService: UserService,
+    private readonly chatService: ChatService,
   ) {}
 
   async signup(signupDto: SignupDto) {
@@ -109,5 +111,11 @@ export class AuthService {
     await this.redisService.del(accessKey);
     await this.redisService.del(refreshKey);
     return { message: 'Signout successful' };
+  }
+
+  async deleteAccount(userId: string) {
+    await this.chatService.deleteUserFromAllChats(userId);
+    await this.userService.deleteUser(userId);
+    return { message: 'Account deleted successfully' };
   }
 }

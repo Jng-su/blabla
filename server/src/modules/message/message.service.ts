@@ -38,11 +38,7 @@ export class MessageService {
       content,
       timestamp,
     });
-
-    // 메시지 저장
     const savedMessage = await this.messageRepository.save(message);
-
-    // 채팅의 lastMessage 필드 업데이트
     await this.chatService.updateLastMessage(chatId, {
       content,
       timestamp,

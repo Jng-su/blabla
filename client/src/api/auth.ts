@@ -30,4 +30,12 @@ export const authApi = {
     const response = await api.get("/auth/me");
     return response.data;
   },
+
+  // 회원 탈퇴
+  deleteAccount: async () => {
+    const response = await api.delete("/auth/delete");
+    Cookies.remove("access_token");
+    Cookies.remove("refresh_token");
+    return response.data;
+  },
 };

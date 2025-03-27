@@ -55,9 +55,10 @@ export class UserService {
     const user = await this.getUserById(userId);
     await this.userRepository
       .createQueryBuilder()
-      .relation(User, 'friends')
-      .of(user)
-      .remove(user.friends || []);
+      .delete()
+      .from('user_friends')
+      .where('userId = :userId OR friendId = :userId', { userId })
+      .execute();
     await this.userRepository.remove(user);
   }
 
