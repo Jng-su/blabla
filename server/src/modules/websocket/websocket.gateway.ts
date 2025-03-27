@@ -80,4 +80,10 @@ export class WebsocketGateway
   ) {
     await this.messageHandler.handlePrivateMessage(client, privateMessageDto);
   }
+
+  // 클라이언트로부터 채팅방 나가기 요청 시 호출
+  @SubscribeMessage('leaveChat')
+  async onLeaveChat(client: AuthSocket, chatId: string) {
+    await this.chatHandler.handleLeaveChat(client, chatId);
+  }
 }

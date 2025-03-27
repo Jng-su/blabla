@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../user/entites/user.entity';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { User } from '../user/entites/user.entity';
     }),
     RedisModule,
     UserModule,
+    ChatModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

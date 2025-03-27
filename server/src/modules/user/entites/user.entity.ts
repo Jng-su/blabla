@@ -33,7 +33,9 @@ export class User {
   @Column({ default: 'user', nullable: true })
   role: string;
 
-  @ManyToMany(() => User, (user) => user.friends)
+  @ManyToMany(() => User, (user) => user.friends, {
+    cascade: ['insert', 'update'],
+  })
   @JoinTable({
     name: 'user_friends',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },

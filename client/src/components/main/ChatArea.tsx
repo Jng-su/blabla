@@ -15,6 +15,9 @@ export default function ChatArea({
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const DEFAULT_CHAT_IMAGE =
+    "https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-chat-image.png";
+
   useEffect(() => {
     if (selectedChat?.chatId) {
       const fetchMessages = async () => {
@@ -84,6 +87,7 @@ export default function ChatArea({
     e.preventDefault();
     handleSendMessage();
   };
+
   const openModal = (friendId: string) => {
     setSelectedFriendId(friendId);
     setIsModalOpen(true);
@@ -94,19 +98,23 @@ export default function ChatArea({
     setSelectedFriendId(null);
   };
 
+  const getChatImage = () => {
+    return selectedChat?.name === "알수없음"
+      ? DEFAULT_CHAT_IMAGE
+      : selectedChat?.image;
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
       <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-violet-50">
         {selectedChat ? (
           <>
-            {selectedChat.image && (
-              <img
-                src={selectedChat.image}
-                alt="프로필"
-                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-              />
-            )}
+            <img
+              src={getChatImage()}
+              alt="프로필"
+              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+            />
             <h2 className="flex text-xl font-extrabold text-gray-800 gap-2">
               <p className="text-primary">{selectedChat.name || "이름 없음"}</p>
               님과의 채팅
@@ -144,20 +152,18 @@ export default function ChatArea({
                   </div>
                 ) : (
                   <div className="flex">
-                    {selectedChat.image && (
-                      <img
-                        src={selectedChat.image}
-                        alt="프로필"
-                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 cursor-pointer"
-                        onClick={() =>
-                          openModal(
-                            selectedChat.participants.find(
-                              (id) => id !== currentUserId
-                            ) || ""
-                          )
-                        }
-                      />
-                    )}
+                    <img
+                      src={getChatImage()}
+                      alt="프로필"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 cursor-pointer"
+                      onClick={() =>
+                        openModal(
+                          selectedChat.participants.find(
+                            (id) => id !== currentUserId
+                          ) || ""
+                        )
+                      }
+                    />
                     <div>
                       <p className="text-sm font-semibold text-gray-800 pl-2">
                         {selectedChat.name || msg.fromUserId}

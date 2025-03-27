@@ -8,8 +8,8 @@ import { Chat } from './entites/chat.entity';
 export class ChatService {
   constructor(
     @InjectRepository(Chat)
-    private chatRepository: Repository<Chat>,
-    private userService: UserService,
+    private readonly chatRepository: Repository<Chat>,
+    private readonly userService: UserService,
   ) {}
 
   async createOrGetChat(
@@ -40,16 +40,13 @@ export class ChatService {
       where: { participants: Like(`%${userId}%`) },
       relations: ['messages'],
     });
-
     const activeChats = chats.filter(
       (chat) => chat.messages && chat.messages.length > 0,
     );
-
     return Promise.all(
       activeChats.map(async (chat) => {
         let chatName = chat.name;
         let chatImage = chat.image;
-
         if (chat.chatType === 'personal') {
           const opponentId = chat.participants.find((id) => id !== userId);
           if (opponentId) {
@@ -58,10 +55,9 @@ export class ChatService {
             chatImage = opponent.profile_image;
           }
         }
-
         return {
           ...chat,
-          name: chatName || 'Unnamed Chat',
+          name: chatName || '알수없음',
           image: chatImage || null,
           lastMessageContent: chat.lastMessageContent,
           lastMessageTimestamp: chat.lastMessageTimestamp,
@@ -87,5 +83,41 @@ export class ChatService {
       lastMessageTimestamp: lastMessage.timestamp,
       lastMessageSenderId: lastMessage.senderId,
     });
+  }
+
+  async deleteChat(
+    userId: string,
+    chatId: string,
+  ): Promise<{ chat?: Chat; isDeleted: boolean }> {
+    const chat = await this.chatRepository.findOne({ where: { chatId } });
+    if (!chat) {
+      throw new Error('Chat not found');
+    }
+    if (!chat.participants.includes(userId)) {
+      throw new Error('You are not a participant of this chat');
+    }
+
+    chat.participants = chat.participants.filter((id) => id !== userId);
+    if (chat.participants.length === 0) {
+      await this.chatRepository.remove(chat);
+      return { isDeleted: true };
+    } else {
+      await this.chatRepository.save(chat);
+      return { chat, isDeleted: false };
+    }
+  }
+
+  async deleteUserFromAllChats(userId: string): Promise<void> {
+    const chats = await this.chatRepository.find({
+      where: { participants: Like(`%${userId}%`) },
+    });
+    for (const chat of chats) {
+      chat.participants = chat.participants.filter((id) => id !== userId);
+      if (chat.participants.length === 0) {
+        await this.chatRepository.remove(chat);
+      } else {
+        await this.chatRepository.save(chat);
+      }
+    }
   }
 }

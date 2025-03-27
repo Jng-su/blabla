@@ -19,18 +19,26 @@ export default function ChatList({
   const { data: friends } = useGetFriends();
   const [chats, setChats] = useState<Chat[]>([]);
 
+  const DEFAULT_CHAT_IMAGE =
+    "https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-chat-image.png";
+
   useEffect(() => {
     if (chatsData) {
       setChats(
-        chatsData.map((chat: Chat) => ({
-          ...chat,
-          lastMessage: chat.lastMessageContent
-            ? {
-                content: chat.lastMessageContent,
-                timestamp: chat.lastMessageTimestamp!,
-              }
-            : undefined,
-        }))
+        chatsData.map((chat: Chat) => {
+          const isOpponentMissing = chat.participants.length === 1;
+          return {
+            ...chat,
+            name: isOpponentMissing ? "알수없음" : chat.name,
+            image: isOpponentMissing ? DEFAULT_CHAT_IMAGE : chat.image,
+            lastMessage: chat.lastMessageContent
+              ? {
+                  content: chat.lastMessageContent,
+                  timestamp: chat.lastMessageTimestamp!,
+                }
+              : undefined,
+          };
+        })
       );
     }
   }, [chatsData]);
@@ -94,21 +102,20 @@ export default function ChatList({
       return;
     }
 
-    // 친구 이름과 이미지 추가
     const newChat: Chat = {
       chatId,
       chatType: "personal",
       participants,
-      name: selectedFriend.name, // 친구 이름 설정
-      image: selectedFriend.profile_image || undefined, // 친구 이미지 설정
+      name: selectedFriend.name,
+      image: selectedFriend.profile_image || undefined,
     };
 
     socket.emit("createChat", {
       chatId,
       chatType: "personal",
       participants,
-      name: selectedFriend.name, // 서버에도 이름 전달 (선택적)
-      image: selectedFriend.profile_image, // 서버에도 이미지 전달 (선택적)
+      name: selectedFriend.name,
+      image: selectedFriend.profile_image,
     });
     onChatSelect(newChat);
     setIsCreateChatModalOpen(false);
@@ -141,9 +148,13 @@ export default function ChatList({
             <div
               key={chat.chatId}
               className={`cursor-pointer p-4 mb-3 rounded-lg shadow-lg ${
-                selectedChatId === chat.chatId
-                  ? "bg-[#575076] text-white"
-                  : "bg-white hover:bg-gray-100"
+                chat.name === "알수없음"
+                  ? selectedChatId === chat.chatId
+                    ? "bg-gray-300 text-gray-600" // 선택 시 흐린 회색
+                    : "bg-gray-200 text-gray-500 hover:bg-gray-300" // 기본 흐린 회색
+                  : selectedChatId === chat.chatId
+                  ? "bg-[#575076] text-white" // 선택 시 보라색
+                  : "bg-white hover:bg-gray-100 text-gray-800" // 기본 흰색
               }`}
               onClick={() => handleChatSelect(chat.chatId)}
             >
@@ -160,7 +171,9 @@ export default function ChatList({
                     {chat.lastMessageTimestamp && (
                       <span
                         className={`text-xs ${
-                          selectedChatId === chat.chatId
+                          chat.name === "알수없음"
+                            ? "text-gray-400" // 탈퇴 시 흐린 글씨
+                            : selectedChatId === chat.chatId
                             ? "text-gray-300"
                             : "text-gray-600"
                         }`}
@@ -178,7 +191,9 @@ export default function ChatList({
                   {chat.lastMessageContent && (
                     <p
                       className={`text-xs ${
-                        selectedChatId === chat.chatId
+                        chat.name === "알수없음"
+                          ? "text-gray-400"
+                          : selectedChatId === chat.chatId
                           ? "text-gray-300"
                           : "text-gray-600"
                       }`}

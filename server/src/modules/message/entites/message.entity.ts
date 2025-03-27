@@ -7,13 +7,13 @@ export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Chat, (chat) => chat.messages)
+  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE' })
   chat: Chat;
 
-  @Column({ name: 'from_user_id' })
+  @Column({ name: 'from_user_id', nullable: true })
   fromUserId: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   fromUser: User;
 
   @Column({ name: 'to_user_id' })

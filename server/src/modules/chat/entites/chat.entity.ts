@@ -1,19 +1,19 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { Message } from '../../message/entites/message.entity';
+import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 
 @Entity()
 export class Chat {
   @PrimaryColumn()
   chatId: string;
 
-  @Column({ nullable: true }) // 개인 채팅은 이름이 없을 수도 있음
+  @Column({ nullable: true })
   name: string;
 
-  @Column({ nullable: true }) // 개인 채팅은 이미지가 없을 수도 있음
+  @Column({ nullable: true })
   image: string;
 
   @Column()
-  chatType: string; // 개인, 그룹
+  chatType: string; // "personal" | "group"
 
   @Column({ type: 'simple-array' })
   participants: string[];
