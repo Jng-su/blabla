@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../key";
 import { userApi } from "../../api/user";
+import { UpdateUserData } from "../../types/user";
 
 export const useInviteFriend = () => {
   const queryClient = useQueryClient();
@@ -18,11 +19,7 @@ export const useInviteFriend = () => {
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: {
-      name?: string;
-      profile_image?: string;
-      statusMessage?: string;
-    }) => userApi.updateUser(formData),
+    mutationFn: (formData: UpdateUserData) => userApi.updateUser(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myInfo });
     },
