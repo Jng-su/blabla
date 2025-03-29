@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
         "/api/v1": {
           target: "http://blabla-server:8000",
           changeOrigin: true,
+          ws: true,
         },
       },
     },

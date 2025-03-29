@@ -1,11 +1,10 @@
-import { Injectable, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { redisConfig } from '../../config/redis.config';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly redis: Redis;
-  private readonly logger = new Logger(RedisService.name);
 
   constructor() {
     const config = redisConfig();
@@ -15,44 +14,46 @@ export class RedisService implements OnModuleDestroy {
     });
 
     this.redis.on('connect', () => {
-      this.logger.log('🚀 Redis connected successfully');
+      console.log('🚀 Redis connected successfully');
     });
 
     this.redis.on('error', (err) => {
-      this.logger.error(`❌ Redis connection error: ${err.message}`);
+      console.error(`❌ Redis connection error: ${err.message}`);
     });
 
     this.redis.on('end', () => {
-      this.logger.warn('⚠️ Redis connection closed');
+      console.warn('⚠️ Redis connection closed');
     });
   }
 
-  async set(email: string, token: string, ttl?: number): Promise<void> {
-    const key = `jwt:${email}`;
-    if (ttl) {
-      await this.redis.setex(key, ttl, token);
-    } else {
-      await this.redis.set(key, token);
-    }
-    this.logger.log(`✅ Token set for ${email}`);
+  async set(
+    email: string,
+    access_token: string,
+    refresh_token: string,
+    accessTokenTTL: number,
+    refreshTokenTTL: number,
+  ): Promise<void> {
+    const accessKey = `access_token:${email}`;
+    const refreshKey = `refresh_token:${email}`;
+    await this.redis.setex(accessKey, accessTokenTTL, access_token);
+    await this.redis.setex(refreshKey, refreshTokenTTL, refresh_token);
   }
 
-  async get(email: string): Promise<string | null> {
-    return await this.redis.get(`jwt:${email}`);
+  async get(key: string): Promise<string | null> {
+    return await this.redis.get(`${key}`);
   }
 
-  async del(email: string): Promise<void> {
-    const key = `jwt:${email}`;
+  async del(key: string): Promise<void> {
     const result = await this.redis.del(key);
     if (result > 0) {
-      this.logger.log(`🗑️ Token deleted for ${email}`);
+      console.log(`🗑️ Key deleted: ${key}`);
     } else {
-      this.logger.warn(`⚠️ No token found for ${email}`);
+      console.warn(`⚠️ No key found for deletion: ${key}`);
     }
   }
 
   onModuleDestroy() {
     this.redis.quit();
-    this.logger.log('🔌 Redis connection closed');
+    console.log('🔌 Redis connection closed');
   }
 }

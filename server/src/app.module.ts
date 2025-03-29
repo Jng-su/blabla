@@ -5,6 +5,10 @@ import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { FileModule } from './modules/file/file.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { MessageModule } from './modules/message/message.module';
 
 @Module({
   imports: [
@@ -17,6 +21,10 @@ import { UserModule } from './modules/user/user.module';
     RedisModule,
     AuthModule,
     UserModule,
+    FileModule,
+    WebsocketModule,
+    ChatModule,
+    MessageModule,
   ],
 })
 export class AppModule {

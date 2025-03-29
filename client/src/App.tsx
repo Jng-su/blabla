@@ -1,12 +1,18 @@
-import { usePing } from "./hooks/ping/usePing";
+import { Routes, Route } from "react-router-dom";
+import { useAuthStatusQuery } from "./query/queries/auth";
+import { SpaRoutes } from "./routes/SpaRoutes";
 
 export default function App() {
-  const { response, error } = usePing();
+  const { data } = useAuthStatusQuery();
+  const isAuthenticated = data?.isAuthenticated || false;
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <p className="text-2xl">{response}</p>
-      {error && <p className="text-red-500">Error: {error}</p>}
+    <div className="mx-auto h-screen flex items-center justify-center">
+      <Routes>
+        {SpaRoutes(isAuthenticated).map((route) => (
+          <Route key={route.path} path={route.path} element={route.element} />
+        ))}
+      </Routes>
     </div>
   );
 }
