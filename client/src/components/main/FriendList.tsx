@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useGetFriends, useGetMe } from "../../query/queries/user";
+import { useGetFriends } from "../../query/queries/user";
 import GetUserModal from "../modals/GetUserModal";
 import { Friend } from "../../types/friend";
 
 export default function FriendsList() {
-  const { data: user } = useGetMe();
   const { data: friends } = useGetFriends();
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
