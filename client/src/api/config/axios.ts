@@ -3,7 +3,7 @@ import { createRequestInterceptor } from "./requestInterceptor";
 import { createResponseInterceptor } from "./responseInterceptor";
 
 const api: AxiosInstance = axios.create({
-  baseURL: "/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "/api/v1",
   timeout: 5000,
   headers: { "Content-Type": "application/json" },
 });
