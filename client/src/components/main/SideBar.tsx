@@ -76,8 +76,6 @@ export default function Sidebar({
       name: formData.get("name") as string,
       profile_image: formData.get("profile_image") as string,
       statusMessage: formData.get("statusMessage") as string,
-      email: currentUser?.email || "",
-      password: "",
     };
     updateUser(userDataObject, {
       onSuccess: () => {

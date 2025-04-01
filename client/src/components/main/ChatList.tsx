@@ -150,11 +150,11 @@ export default function ChatList({
               className={`cursor-pointer p-4 mb-3 rounded-lg shadow-lg ${
                 chat.name === "알수없음"
                   ? selectedChatId === chat.chatId
-                    ? "bg-gray-300 text-gray-600" // 선택 시 흐린 회색
-                    : "bg-gray-200 text-gray-500 hover:bg-gray-300" // 기본 흐린 회색
+                    ? "bg-gray-300 text-gray-600"
+                    : "bg-gray-200 text-gray-500 hover:bg-gray-300"
                   : selectedChatId === chat.chatId
-                  ? "bg-[#575076] text-white" // 선택 시 보라색
-                  : "bg-white hover:bg-gray-100 text-gray-800" // 기본 흰색
+                  ? "bg-[#575076] text-white"
+                  : "bg-white hover:bg-gray-100 text-gray-800"
               }`}
               onClick={() => handleChatSelect(chat.chatId)}
             >
@@ -172,7 +172,7 @@ export default function ChatList({
                       <span
                         className={`text-xs ${
                           chat.name === "알수없음"
-                            ? "text-gray-400" // 탈퇴 시 흐린 글씨
+                            ? "text-gray-400"
                             : selectedChatId === chat.chatId
                             ? "text-gray-300"
                             : "text-gray-600"

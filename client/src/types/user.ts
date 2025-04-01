@@ -1,5 +1,5 @@
 export interface UpdateUserData {
   name: string;
-  email: string;
-  password: string;
+  statusMessage: string;
+  profile_image: string;
 }
