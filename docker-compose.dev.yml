@@ -23,6 +23,18 @@ services:
     networks:
       - blabla-network
 
+  k6:
+    image: grafana/k6:latest
+    container_name: k6-tester
+    volumes:
+      - ./server/test:/tests
+    command: run /tests/large-message-test.js --verbose
+    networks:
+      - blabla-network
+    depends_on:
+      blabla-server:
+        condition: service_healthy
+
   blabla-client:
     container_name: blabla-client
     build:
