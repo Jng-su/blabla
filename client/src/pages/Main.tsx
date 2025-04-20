@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { MessageSquareMore } from "lucide-react";
 import { useSignOutMutation } from "../query/mutation/auth";
 import { useAuthStatusQuery } from "../query/queries/auth";
 import { useState } from "react";
@@ -47,8 +46,12 @@ export default function Main() {
 
   return (
     <div className="w-3/4 h-[85vh] flex flex-col bg-white rounded-lg shadow-lg mx-auto overflow-hidden">
-      <div className="flex gap-2 py-4 border-b border-gray-200 px-4 h-16 flex-shrink-0">
-        <MessageSquareMore size={30} className="text-primary" />
+      <div className="flex gap-2 py-4 border-b border-gray-200 px-4 items-center">
+        <img
+          src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-chat-image.png"
+          alt="Chat Logo"
+          className="w-9 h-9"
+        />
         <p className="text-xl font-bold">blabla</p>
       </div>
       <div className="flex w-full flex-1 overflow-hidden">
