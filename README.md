@@ -26,8 +26,8 @@
 ### 주요 환경
 
 | Language   | Framework              | CI/CD          | Container | Database           | Realtime  | Storage (Files / Deploy)      | Deployment                   |
-| ---------- | ---------------------- | -------------- | --------- | ------------------ | --------- | ----------------------------- | ---------------------------- | --- |
-| TypeScript | Nest.js / React + Vite | GitHub Actions | Docker    | PostgreSQL / Redis | WebSocket | AWS S3 (images, client build) | AWS EC2 (server & WebSocket) |     |
+| ---------- | ---------------------- | -------------- | --------- | ------------------ | --------- | ----------------------------- | ---------------------------- |
+| TypeScript | Nest.js / React + Vite | GitHub Actions | Docker    | PostgreSQL / Redis | WebSocket | AWS S3 (images, client build) | AWS EC2 (server & WebSocket) |
 
 ### 주요 라이브러리
 
@@ -51,8 +51,8 @@
 ### 로그인 및 회원가입 페이지
 
 <div style="display: flex; gap: 1rem; justify-content: center;">
-  <img src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/pages/signin.png" alt="signin" style="width: 48%;" />
-  <img src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/pages/signup.png" alt="signup" style="width: 48%;" />
+  <img src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/pages/signin.png" alt="signin" style="width: 49%;" />
+  <img src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/pages/signup.png" alt="signup" style="width: 49%;" />
 </div>
 
 ### 채팅 페이지
