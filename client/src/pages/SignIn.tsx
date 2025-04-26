@@ -24,7 +24,7 @@ export default function SignIn() {
   return (
     <div className="w-[25%] min-h-screen flex items-center justify-center">
       <div className="p-8 bg-white rounded-lg shadow-lg w-full max-w-sm">
-        <div className="flex justify-center gap-2 mb-6">
+        <div className="flex items-center justify-center gap-2 mb-6">
           <img
             src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-chat-image.png"
             alt="Chat Logo"
@@ -40,7 +40,7 @@ export default function SignIn() {
               className="input-style w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
+              placeholder="blabla@blabla.com"
             />
           </div>
           <div>
@@ -50,7 +50,7 @@ export default function SignIn() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="blabla"
             />
           </div>
         </div>
@@ -78,6 +78,15 @@ export default function SignIn() {
             회원가입
           </Link>
         </p>
+
+        <div className="mt-4">
+          <p>
+            <span className="font-bold">email:</span> blabla@blabla.com{" "}
+          </p>
+          <p>
+            <span className="font-bold">password:</span> blabla
+          </p>
+        </div>
       </div>
     </div>
   );
