@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignInMutation } from "../query/mutation/auth";
-import { MessageSquareMore } from "lucide-react";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -25,8 +24,12 @@ export default function SignIn() {
   return (
     <div className="w-[25%] min-h-screen flex items-center justify-center">
       <div className="p-8 bg-white rounded-lg shadow-lg w-full max-w-sm">
-        <div className="flex justify-center gap-2 mb-6">
-          <MessageSquareMore size={36} className="text-primary" />
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <img
+            src="https://blabla-cloud.s3.ap-northeast-2.amazonaws.com/public/default-chat-image.png"
+            alt="Chat Logo"
+            className="w-9 h-9"
+          />
           <h1 className="text-3xl font-bold text-center">blabla</h1>
         </div>
 
@@ -37,7 +40,7 @@ export default function SignIn() {
               className="input-style w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
+              placeholder="blabla@blabla.com"
             />
           </div>
           <div>
@@ -47,7 +50,7 @@ export default function SignIn() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="blabla"
             />
           </div>
         </div>
@@ -75,6 +78,15 @@ export default function SignIn() {
             회원가입
           </Link>
         </p>
+
+        <div className="mt-4">
+          <p>
+            <span className="font-bold">email:</span> blabla@blabla.com{" "}
+          </p>
+          <p>
+            <span className="font-bold">password:</span> blabla
+          </p>
+        </div>
       </div>
     </div>
   );
