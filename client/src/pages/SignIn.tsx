@@ -79,13 +79,28 @@ export default function SignIn() {
           </Link>
         </p>
 
-        <div className="mt-4">
-          <p>
-            <span className="font-bold">email:</span> blabla@blabla.com{" "}
-          </p>
-          <p>
-            <span className="font-bold">password:</span> blabla
-          </p>
+        <div className="mt-4 space-y-2 text-sm">
+          <hr />
+          <div>
+            <span className="font-semibold">Email : </span>
+            <span>blabla@blabla.com</span>
+          </div>
+          <div>
+            <span className="font-semibold">Password : </span>
+            <span>blabla</span>
+          </div>
+
+          <hr />
+
+          <div>
+            <span className="font-semibold">Email : </span>
+            <span>blabla1@blabla.com</span>
+          </div>
+          <div>
+            <span className="font-semibold">Password : </span>
+            <span>blabla1</span>
+          </div>
+          <hr />
         </div>
       </div>
     </div>
