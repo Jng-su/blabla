@@ -23,3 +23,5 @@ COPY package.json package-lock.json ./
 RUN npm ci --production
 
 EXPOSE 8000
+
+CMD ["node", "dist/main.js"]
